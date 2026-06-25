@@ -1,0 +1,48 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { FormEvent, useState } from 'react';
+
+type Department = { id: string; name: string };
+
+type Agent = { id: string; name: string };
+
+function splitList(value: string) {
+  return value.split('\n').map((item) => item.trim()).filter(Boolean);
+}
+
+export function AddAgentForm({ departments }: { departments: Department[] }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setLoading(true);
+    const fd = new FormData(e.currentTarget);
+    await fetch('/api/agents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      name: fd.get('name'), role: fd.get('role'), goal: fd.get('goal'), departmentId: fd.get('departmentId') || null,
+      tools: splitList(String(fd.get('tools') || '')), autonomyLevel: fd.get('autonomyLevel'), dailyBudget: Number(fd.get('dailyBudget') || 10), riskLevel: fd.get('riskLevel'),
+    }) });
+    setLoading(false); router.refresh(); e.currentTarget.reset();
+  }
+  return <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-white/[.04] p-5"><h3 className="font-semibold">Add digital FTE</h3><div className="mt-4 grid gap-3 md:grid-cols-2"><Input name="name" placeholder="Growth Agent" /><Input name="role" placeholder="Pipeline operator" /><Input name="goal" placeholder="Qualify leads and prepare safe outreach" wide /><Select name="departmentId" options={[['', 'No department'], ...departments.map((d) => [d.id, d.name])]} /><Select name="autonomyLevel" options={[["observe","Observe"],["suggest","Suggest"],["approval_required","Approval required"],["auto_act","Auto act"]]} /><Select name="riskLevel" options={[["low","Low"],["medium","Medium"],["high","High"],["critical","Critical"]]} /><Input name="dailyBudget" placeholder="10" type="number" /><textarea name="tools" placeholder="Tools, one per line" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2" /></div><button disabled={loading} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">{loading ? 'Adding...' : 'Add FTE'}</button></form>;
+}
+
+export function AddDepartmentForm() {
+  const router = useRouter(); const [loading,setLoading]=useState(false);
+  async function submit(e: FormEvent<HTMLFormElement>) { e.preventDefault(); setLoading(true); const fd=new FormData(e.currentTarget); await fetch('/api/departments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:fd.get('name'),purpose:fd.get('purpose'),kpis:splitList(String(fd.get('kpis')||'')),riskLevel:fd.get('riskLevel'),budget:Number(fd.get('budget')||0)})}); setLoading(false); router.refresh(); e.currentTarget.reset(); }
+  return <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-white/[.04] p-5"><h3 className="font-semibold">Add department</h3><div className="mt-4 grid gap-3 md:grid-cols-2"><Input name="name" placeholder="Customer Success" /><Input name="budget" placeholder="500" type="number" /><Input name="purpose" placeholder="Own customer outcomes and escalations" wide /><Select name="riskLevel" options={[["low","Low"],["medium","Medium"],["high","High"],["critical","Critical"]]} /><textarea name="kpis" placeholder="KPIs, one per line" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2" /></div><button disabled={loading} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">{loading?'Adding...':'Add department'}</button></form>;
+}
+
+export function AddPolicyForm() {
+  const router = useRouter(); const [loading,setLoading]=useState(false);
+  async function submit(e: FormEvent<HTMLFormElement>) { e.preventDefault(); setLoading(true); const fd=new FormData(e.currentTarget); await fetch('/api/policies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:fd.get('name'),description:fd.get('description'),condition:fd.get('condition'),action:fd.get('action'),mode:fd.get('mode'),riskLevel:fd.get('riskLevel'),enabled:true})}); setLoading(false); router.refresh(); e.currentTarget.reset(); }
+  return <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-white/[.04] p-5"><h3 className="font-semibold">Add governance policy</h3><div className="mt-4 grid gap-3 md:grid-cols-2"><Input name="name" placeholder="High confidence auto-reply" /><Input name="condition" placeholder="confidence >= 92 AND risk == low" /><Input name="description" placeholder="Allow safe high-confidence support replies" wide /><Input name="action" placeholder="Auto-approve response" /><Select name="mode" options={[["auto_approve","Auto approve"],["require_approval","Require approval"],["block","Block"],["throttle","Throttle"],["pause","Pause"],["escalate","Escalate"]]} /><Select name="riskLevel" options={[["low","Low"],["medium","Medium"],["high","High"],["critical","Critical"]]} /></div><button disabled={loading} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">{loading?'Adding...':'Add policy'}</button></form>;
+}
+
+export function AddWorkflowForm({ agents }: { agents: Agent[] }) {
+  const router = useRouter(); const [loading,setLoading]=useState(false);
+  async function submit(e: FormEvent<HTMLFormElement>) { e.preventDefault(); setLoading(true); const fd=new FormData(e.currentTarget); await fetch('/api/workflows',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:fd.get('name'),trigger:fd.get('trigger'),ownerAgentId:fd.get('ownerAgentId')||null,steps:splitList(String(fd.get('steps')||'')),toolsUsed:splitList(String(fd.get('toolsUsed')||'')),approvalPoints:splitList(String(fd.get('approvalPoints')||'')),successMetric:fd.get('successMetric'),failurePath:fd.get('failurePath')})}); setLoading(false); router.refresh(); e.currentTarget.reset(); }
+  return <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-white/[.04] p-5"><h3 className="font-semibold">Add workflow</h3><div className="mt-4 grid gap-3 md:grid-cols-2"><Input name="name" placeholder="Customer escalation workflow" /><Input name="trigger" placeholder="Ticket sentiment is angry or urgent" /><Select name="ownerAgentId" options={[['','No owner'],...agents.map((a)=>[a.id,a.name])]} /><Input name="successMetric" placeholder="Escalation handled within SLA" /><Input name="failurePath" placeholder="Escalate to human operator" wide /><textarea name="steps" placeholder="Steps, one per line" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" /><textarea name="toolsUsed" placeholder="Tools, one per line" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" /><textarea name="approvalPoints" placeholder="Approval points, one per line" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" /></div><button disabled={loading} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">{loading?'Adding...':'Add workflow'}</button></form>;
+}
+
+function Input({ name, placeholder, type = 'text', wide = false }: { name: string; placeholder: string; type?: string; wide?: boolean }) { return <input name={name} type={type} placeholder={placeholder} required className={`rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none ${wide ? 'md:col-span-2' : ''}`} />; }
+function Select({ name, options }: { name: string; options: string[][] }) { return <select name={name} className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">{options.map(([value,label])=><option className="bg-black" key={value} value={value}>{label}</option>)}</select>; }

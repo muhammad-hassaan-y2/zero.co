@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 20% 3%;
+  --foreground: 0 0% 100%;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #05050a;
+  color: white;
+  font-feature-settings: "ss01", "cv02", "cv03";
+}
+
+.glass {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.035));
+  backdrop-filter: blur(18px);
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #fff, #a5f3fc, #c4b5fd, #fff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grid-bg {
+  background-image: linear-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
