@@ -16,6 +16,8 @@ type Profile = {
   workspaceId: string;
   businessDescription: string;
   customers: string;
+  problemSolved?: string | null;
+  customerOutcome?: string | null;
   coreDepartments?: string | null;
   existingHumanRoles?: string | null;
   currentTools?: string | null;
@@ -44,6 +46,10 @@ function includesAny(text: string, words: string[]) {
   return words.some((word) => lower.includes(word));
 }
 
+function customerResult(profile: Profile) {
+  return (profile.customerOutcome || profile.problemSolved || profile.businessDescription).trim();
+}
+
 export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
   const source = [
     profile.businessDescription,
@@ -60,6 +66,7 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
   const monthlyBudget = Number(profile.monthlyAiBudget ?? 500) || 500;
   const dailyBudgetBase = Math.max(8, Math.round(monthlyBudget / 30 / 4));
   const workspaceId = profile.workspaceId;
+  const result = customerResult(profile);
 
   const departmentSpecs: {
     key: string;
@@ -68,9 +75,9 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     kpis: string[];
     riskLevel: RiskLevel;
   }[] = [
-    { key: 'executive', name: 'Executive Ops', purpose: 'Coordinate the AI-native company operating rhythm and board-level reporting.', kpis: ['Operating health', 'Policy compliance', 'Weekly execution velocity'], riskLevel: 'medium' as const },
-    { key: 'operations', name: 'Operations', purpose: 'Run day-to-day workflows and keep handoffs moving between digital FTEs.', kpis: ['Tasks completed', 'Cycle time', 'Escalation rate'], riskLevel: 'medium' as const },
-    { key: 'strategy', name: 'Strategy & Architecture', purpose: 'Convert founder intent into company design, operating models, and agent roadmaps.', kpis: ['Blueprint quality', 'Roadmap clarity', 'Assumption coverage'], riskLevel: 'medium' as const },
+    { key: 'executive', name: 'Executive Ops', purpose: 'Coordinate the AI-native company around measurable customer results and board-level proof.', kpis: ['Outcome delivery health', 'Policy compliance', 'Weekly result velocity'], riskLevel: 'medium' as const },
+    { key: 'operations', name: 'Operations', purpose: 'Run day-to-day workflows that deliver the promised customer result.', kpis: ['Results delivered', 'Cycle time', 'Escalation rate'], riskLevel: 'medium' as const },
+    { key: 'strategy', name: 'Strategy & Architecture', purpose: 'Convert founder intent into outcome maps, operating models, and agent roadmaps.', kpis: ['Outcome map quality', 'Roadmap clarity', 'Assumption coverage'], riskLevel: 'medium' as const },
     { key: 'ai-systems', name: 'AI Systems', purpose: 'Own model routing, voice interactions, tool execution, and AI service reliability.', kpis: ['Live response success', 'Model latency', 'Tool error rate'], riskLevel: 'high' as const },
     { key: 'knowledge', name: 'Knowledge & Data', purpose: 'Maintain source-of-truth memory, metrics, transcripts, and reusable company context.', kpis: ['Knowledge freshness', 'Data quality', 'Retrieval accuracy'], riskLevel: 'medium' as const },
     { key: 'qa', name: 'QA / Risk', purpose: 'Review outputs, detect risky behavior, and enforce governance policies.', kpis: ['Risky actions blocked', 'Review accuracy', 'Low-confidence catches'], riskLevel: 'high' as const },
@@ -113,13 +120,13 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       departmentId: byName.get('Executive Ops'),
       name: 'CEO Operator Agent',
       role: 'Operating coordinator',
-      goal: 'Keep the company OS aligned across departments, policies, and weekly board reporting.',
+      goal: `Keep the company OS aligned to the customer result: ${result}.`,
       tools: ['Company OS', 'Board Report', 'Decision Ledger'],
       autonomyLevel: 'suggest',
       dailyBudget: String(dailyBudgetBase),
       riskLevel: 'medium',
       status: 'healthy',
-      currentTask: 'Preparing operating health summary',
+      currentTask: 'Preparing result delivery health summary',
       successRate: 92,
       costToday: '3.80',
     },
@@ -129,13 +136,13 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       departmentId: byName.get('Strategy & Architecture'),
       name: 'Company Architect Agent',
       role: 'AI-native company designer',
-      goal: 'Translate founder goals into departments, agents, workflows, policies, KPIs, and launch sequencing.',
-      tools: ['Bedrock', 'Company Blueprint', 'Operating Model Canvas', 'Roadmap Planner'],
+      goal: 'Translate the paid customer result into departments, agents, workflows, policies, KPIs, proof points, and launch sequencing.',
+      tools: ['Bedrock', 'Outcome Map', 'Company Blueprint', 'Operating Model Canvas', 'Roadmap Planner'],
       autonomyLevel: 'suggest',
       dailyBudget: String(dailyBudgetBase),
       riskLevel: 'medium',
       status: 'healthy',
-      currentTask: 'Refining the company blueprint from onboarding answers',
+      currentTask: 'Mapping customer outcomes to agent-owned delivery loops',
       successRate: 91,
       costToday: '5.60',
     },
@@ -145,13 +152,13 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       departmentId: byName.get('Operations'),
       name: 'Workflow Architect Agent',
       role: 'Process mining and automation designer',
-      goal: 'Convert repetitive work into auditable workflows with triggers, tools, approvals, and fallback paths.',
+      goal: 'Convert repetitive work into auditable result workflows with triggers, tools, quality gates, approvals, and fallback paths.',
       tools: ['Workflow Builder', 'SOP Generator', 'Decision Ledger', 'Process Map'],
       autonomyLevel: 'suggest',
       dailyBudget: String(dailyBudgetBase),
       riskLevel: 'medium',
       status: 'healthy',
-      currentTask: 'Designing first-pass operating workflows',
+      currentTask: 'Designing result delivery workflows',
       successRate: 90,
       costToday: '4.90',
     },
@@ -209,13 +216,13 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       departmentId: byName.get('Knowledge & Data'),
       name: 'Metrics Analyst Agent',
       role: 'Operating analytics agent',
-      goal: 'Calculate operating health, spend, ROI, approval latency, risky actions, and human hours saved.',
-      tools: ['Dashboard Metrics', 'Board Report', 'Aurora Queries', 'Cost Tracker'],
+      goal: 'Calculate result delivery rate, operating health, spend, ROI, approval latency, risky actions, and human hours saved.',
+      tools: ['Outcome Metrics', 'Dashboard Metrics', 'Board Report', 'Aurora Queries', 'Cost Tracker'],
       autonomyLevel: 'suggest',
       dailyBudget: String(dailyBudgetBase),
       riskLevel: 'low',
       status: 'healthy',
-      currentTask: 'Reconciling agent ROI and daily spend',
+      currentTask: 'Reconciling result delivery, agent ROI, and daily spend',
       successRate: 95,
       costToday: '1.80',
     },
@@ -268,13 +275,13 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     {
       id: nanoid(),
       workspaceId,
-      name: 'Weekly Board Report Workflow',
+      name: 'Weekly Result Board Report Workflow',
       trigger: 'Every Friday or on-demand founder request',
       ownerAgentId: agentByName.get('CEO Operator Agent'),
-      steps: ['Collect agent scorecards', 'Summarize risk', 'Calculate spend', 'Recommend autonomy changes'],
-      toolsUsed: ['Decision Ledger', 'Company Metrics', 'Policy Engine'],
+      steps: ['Collect agent scorecards', 'Summarize delivered results', 'Summarize risk', 'Calculate spend', 'Recommend autonomy changes'],
+      toolsUsed: ['Decision Ledger', 'Outcome Metrics', 'Company Metrics', 'Policy Engine'],
       approvalPoints: ['Founder approves recommended autonomy changes'],
-      successMetric: 'Board report generated with risk, cost, and ROI summary',
+      successMetric: 'Board report generated with results delivered, risk, cost, and ROI summary',
       failurePath: 'Escalate missing data to human operator',
     },
     {
@@ -292,13 +299,13 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     {
       id: nanoid(),
       workspaceId,
-      name: 'Company OS Design Loop',
+      name: 'Outcome-to-Company OS Design Loop',
       trigger: 'Founder updates business model, customer segment, or automation goals',
       ownerAgentId: agentByName.get('Company Architect Agent'),
-      steps: ['Parse founder intent', 'Update company blueprint', 'Map departments and agent ownership', 'Propose launch sequence', 'Write changes to board report'],
-      toolsUsed: ['Amazon Bedrock', 'Company Blueprint', 'Board Report', 'Decision Ledger'],
+      steps: ['Parse promised customer result', 'Update outcome map', 'Update company blueprint', 'Map departments and agent ownership', 'Propose launch sequence', 'Write changes to board report'],
+      toolsUsed: ['Amazon Bedrock', 'Outcome Map', 'Company Blueprint', 'Board Report', 'Decision Ledger'],
       approvalPoints: ['Founder approval before replacing core operating model'],
-      successMetric: 'Updated blueprint with clear roles, KPIs, and operating assumptions',
+      successMetric: 'Updated blueprint with clear result owners, KPIs, proof points, and operating assumptions',
       failurePath: 'Keep prior blueprint and create review task',
     },
     {
@@ -310,7 +317,7 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       steps: ['Capture current process', 'Find automation candidates', 'Define trigger and owner agent', 'Add approval checkpoints', 'Generate SOP'],
       toolsUsed: ['Workflow Builder', 'SOP Generator', 'Policy Engine'],
       approvalPoints: ['Human approval before auto-act autonomy is enabled'],
-      successMetric: 'Workflow is executable, governed, and linked to an SOP',
+      successMetric: 'Workflow is executable, governed, linked to an SOP, and tied to a customer result',
       failurePath: 'Route unclear workflow to founder clarification',
     },
     {
@@ -406,11 +413,11 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     workspaceId,
     companyName,
     targetCustomer: profile.customers,
-    valueProposition: `Turn ${profile.businessDescription} into a governed AI-native operation with digital FTEs, policies, and measurable ROI.`,
-    revenueModel: includesAny(source, ['agency', 'service', 'client']) ? 'Monthly retainer plus usage-based automation fee' : 'Subscription plus outcome-based expansion',
-    operatingModel: 'Human-led, AI-operated company OS with policy-bounded digital FTEs and database-backed decision memory.',
-    coreKpis: ['Operating health', 'Agent ROI', 'Human hours saved', 'Risky actions blocked', 'Approval latency'],
-    launchChecklist: ['Complete onboarding', 'Review generated digital FTEs', 'Approve core policies', 'Run first simulation', 'Export board report'],
+    valueProposition: `Deliver ${result} through a governed AI-native operation with digital FTEs, quality gates, proof of work, and measurable ROI.`,
+    revenueModel: includesAny(source, ['agency', 'client']) ? 'Outcome-based retainer plus usage-based automation fee' : 'Subscription plus outcome-based expansion',
+    operatingModel: 'Human-led, AI-operated result delivery system with policy-bounded digital FTEs, quality gates, and database-backed decision memory.',
+    coreKpis: ['Results delivered', 'Outcome quality', 'Agent ROI', 'Human hours saved', 'Risky actions blocked', 'Approval latency'],
+    launchChecklist: ['Define paid customer result', 'Review generated digital FTE owners', 'Approve result quality gates', 'Run first result simulation', 'Export board report'],
   };
 
   const sopRows: InferInsertModel<typeof sops>[] = workflowRows.map((workflow) => ({
@@ -431,13 +438,13 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     id: nanoid(),
     workspaceId,
     title: 'Initial AI-Native Company Board Report',
-    summary: `ZeroCo generated ${ftes.length} digital FTEs, ${workflowRows.length} workflows, ${policyRows.length} governance policies, and a starter decision ledger for ${profile.businessDescription}.`,
+    summary: `ZeroCo generated ${ftes.length} digital FTEs, ${workflowRows.length} workflows, ${policyRows.length} governance policies, and a starter decision ledger to deliver: ${result}.`,
     tasksCompleted: events.filter((event) => event.eventType === 'task_completed').length * 18,
     moneySpent: String(ftes.reduce((sum, agent) => sum + Number(agent.costToday || 0), 0).toFixed(2)),
     hoursSaved: Math.max(8, ftes.length * 3),
     riskyActionsBlocked: decisions.filter((decision) => ['blocked', 'throttled', 'paused'].includes(decision.decision as string)).length,
-    recommendations: ['Review approval thresholds before enabling auto-act autonomy', 'Keep financial and production actions approval-required', 'Run 3 simulations before connecting real tools'],
-    auditSummary: 'Starter ledger created in Aurora PostgreSQL with policy decisions, approval requests, and cost-control actions.',
+    recommendations: ['Tie every agent to a measurable customer result', 'Review quality gates before enabling auto-act autonomy', 'Keep financial and production actions approval-required', 'Run 3 result simulations before connecting real tools'],
+    auditSummary: 'Starter ledger created in Aurora PostgreSQL with result delivery decisions, approval requests, and cost-control actions.',
   };
 
   return { departments: deptRows, digitalFtes: ftes, workflows: workflowRows, policies: policyRows, decisions, events, blueprint, sops: sopRows, boardReport };

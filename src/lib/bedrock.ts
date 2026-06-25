@@ -26,7 +26,7 @@ export async function enhanceBlueprintWithBedrock(profile: Profile, current: Blu
   }
 
   const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
-  const prompt = `You are designing an AI-native company operating system. Return ONLY valid JSON with keys: companyName, valueProposition, revenueModel, operatingModel, coreKpis array, launchChecklist array. Do not include markdown.\n\nBusiness: ${profile.businessDescription}\nCustomers: ${profile.customers}\nProblem: ${profile.problemSolved || ''}\nOutcome: ${profile.customerOutcome || ''}\nDepartments: ${profile.coreDepartments || ''}\nTools: ${profile.currentTools || ''}\nAutomation goals: ${profile.aiAutomationGoals || ''}\nRisk tolerance: ${profile.riskTolerance || 'medium'}`;
+    const prompt = `You are designing an outcome-driven AI-native company operating system. Do not describe generic AI services. Design a system that delivers the concrete customer result and proves it with metrics, quality gates, workflows, policies, and digital FTE ownership. Return ONLY valid JSON with keys: companyName, valueProposition, revenueModel, operatingModel, coreKpis array, launchChecklist array. Do not include markdown.\n\nBusiness: ${profile.businessDescription}\nCustomers: ${profile.customers}\nProblem: ${profile.problemSolved || ''}\nPaid customer result: ${profile.customerOutcome || ''}\nDepartments: ${profile.coreDepartments || ''}\nTools: ${profile.currentTools || ''}\nAutomation goals: ${profile.aiAutomationGoals || ''}\nRisk tolerance: ${profile.riskTolerance || 'medium'}`;
   const res = await client.send(new ConverseCommand({
     modelId: process.env.AWS_BEDROCK_MODEL_ID!,
     messages: [{ role: 'user', content: [{ text: prompt }] }],

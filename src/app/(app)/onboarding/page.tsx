@@ -57,20 +57,20 @@ export default function OnboardingPage() {
       <div className="mx-auto max-w-5xl">
         <p className="text-sm text-cyan-300">ZeroCo Onboarding</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">Generate your AI-native operating system</h1>
-        <p className="mt-3 max-w-2xl text-white/60">This is not a startup idea generator. Bring your real business or operation. ZeroCo creates the digital FTEs, workflows, policies, and decision ledger around it.</p>
+        <p className="mt-3 max-w-2xl text-white/60">This is not a generic service generator. Bring the result your customer pays for. ZeroCo creates the digital FTEs, workflows, policies, metrics, and proof ledger around delivering it.</p>
 
         <form onSubmit={onSubmit} className="mt-10 grid gap-5 rounded-3xl border border-white/10 bg-white/[.05] p-6 backdrop-blur-xl md:grid-cols-2">
           {[
             ['businessDescription', 'What company or operation are you building?'],
             ['customers', 'Who are your customers?'],
-            ['problemSolved', 'What problem does this operation solve?'],
-            ['customerOutcome', 'What outcome do customers pay for?'],
+            ['problemSolved', 'What painful problem blocks that result today?'],
+            ['customerOutcome', 'What measurable result do customers pay for?'],
             ['coreDepartments', 'What departments/functions exist or are needed?'],
             ['existingHumanRoles', 'What human roles exist today?'],
             ['repetitiveWork', 'What work is repetitive?'],
             ['highRiskWork', 'What work is high-risk?'],
             ['currentTools', 'What tools does your team already use?'],
-            ['aiAutomationGoals', 'What should digital FTEs handle?'],
+            ['aiAutomationGoals', 'What results should digital FTEs produce or improve?'],
             ['actionsRequiringApproval', 'What actions always need human approval?'],
             ['blockedActions', 'What actions should be blocked?'],
             ['autoApprovedActions', 'What can be auto-approved?'],
