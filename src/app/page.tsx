@@ -19,7 +19,6 @@ export default function LandingPage() {
 
       <section className="relative z-10 mx-auto grid min-h-[82vh] max-w-7xl items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_.9fr]">
         <div>
-          <p className="mb-5 inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm text-cyan-100">H0 track 2 · Monetizable B2B AI-native company builder</p>
           <h1 className="max-w-4xl text-6xl font-semibold leading-[0.92] tracking-tight md:text-8xl">
             Build your <span className="text-gradient">AI-native company</span> from zero.
           </h1>

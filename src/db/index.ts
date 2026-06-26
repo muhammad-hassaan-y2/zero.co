@@ -280,10 +280,16 @@ function createMemoryPool() {
 
   const memDb = globalForPg.zerocoMemDb as ReturnType<typeof newDb>;
   const { Pool: MemoryPool, Client: MemoryClient } = memDb.adapters.createPg();
-  const stripTypesParser = (query: unknown) => {
+  const stripUnsupportedPgOptions = (query: unknown) => {
     if (query && typeof query === 'object' && 'types' in query) {
       const copy = { ...(query as Record<string, unknown>) };
       delete copy.types;
+      delete copy.rowMode;
+      return copy;
+    }
+    if (query && typeof query === 'object' && 'rowMode' in query) {
+      const copy = { ...(query as Record<string, unknown>) };
+      delete copy.rowMode;
       return copy;
     }
     return query;
@@ -291,7 +297,7 @@ function createMemoryPool() {
   const patchQuery = (target: { prototype: { query: (...args: unknown[]) => unknown } }) => {
     const original = target.prototype.query;
     target.prototype.query = function patchedQuery(query: unknown, ...args: unknown[]) {
-      return original.call(this, stripTypesParser(query), ...args);
+      return original.call(this, stripUnsupportedPgOptions(query), ...args);
     };
   };
   patchQuery(MemoryPool);

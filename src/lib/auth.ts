@@ -6,6 +6,39 @@ import * as schema from '@/db/schema';
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  schema: {
+    user: {
+      fields: {
+        emailVerified: 'emailVerified',
+        createdAt: 'createdAt',
+        updatedAt: 'updatedAt',
+      },
+    },
+    session: {
+      fields: {
+        userId: 'userId',
+        expiresAt: 'expiresAt',
+        ipAddress: 'ipAddress',
+        userAgent: 'userAgent',
+        createdAt: 'createdAt',
+        updatedAt: 'updatedAt',
+      },
+    },
+    account: {
+      fields: {
+        accountId: 'accountId',
+        providerId: 'providerId',
+        userId: 'userId',
+        accessToken: 'accessToken',
+        refreshToken: 'refreshToken',
+        idToken: 'idToken',
+        accessTokenExpiresAt: 'accessTokenExpiresAt',
+        refreshTokenExpiresAt: 'refreshTokenExpiresAt',
+        createdAt: 'createdAt',
+        updatedAt: 'updatedAt',
+      },
+    },
+  },
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema,
