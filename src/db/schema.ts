@@ -67,6 +67,8 @@ export const agentStatus = pgEnum('agent_status', ['healthy', 'warning', 'blocke
 export const policyMode = pgEnum('policy_mode', ['auto_approve', 'require_approval', 'block', 'throttle', 'pause', 'escalate']);
 export const decisionStatus = pgEnum('decision_status', ['pending', 'approved', 'rejected', 'blocked', 'executed', 'throttled', 'paused']);
 export const eventSeverity = pgEnum('event_severity', ['info', 'warning', 'high', 'critical']);
+export const workflowRunStatus = pgEnum('workflow_run_status', ['queued', 'running', 'waiting_approval', 'completed', 'failed']);
+export const resultStatus = pgEnum('result_status', ['projected', 'verified', 'blocked']);
 
 export const workspaces = pgTable('workspaces', {
   id: text('id').primaryKey(),
@@ -144,6 +146,47 @@ export const workflows = pgTable('workflows', {
   approvalPoints: jsonb('approval_points').$type<string[]>().notNull().default([]),
   successMetric: text('success_metric').notNull(),
   failurePath: text('failure_path').notNull(),
+  createdAt,
+});
+
+export const workflowRuns = pgTable('workflow_runs', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  workflowId: text('workflow_id').notNull().references(() => workflows.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  status: workflowRunStatus('status').notNull().default('queued'),
+  triggerSnapshot: text('trigger_snapshot').notNull(),
+  resultSummary: text('result_summary').notNull().default('Waiting for execution'),
+  outputArtifacts: jsonb('output_artifacts').$type<string[]>().notNull().default([]),
+  costUsd: numeric('cost_usd', { precision: 10, scale: 2 }).notNull().default('0'),
+  durationMs: integer('duration_ms').notNull().default(0),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdAt,
+});
+
+export const workflowStepRuns = pgTable('workflow_step_runs', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  workflowRunId: text('workflow_run_id').notNull().references(() => workflowRuns.id, { onDelete: 'cascade' }),
+  stepIndex: integer('step_index').notNull(),
+  stepName: text('step_name').notNull(),
+  status: workflowRunStatus('status').notNull().default('completed'),
+  evidence: text('evidence').notNull(),
+  toolUsed: text('tool_used'),
+  createdAt,
+});
+
+export const businessResults = pgTable('business_results', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  workflowRunId: text('workflow_run_id').references(() => workflowRuns.id, { onDelete: 'set null' }),
+  agentId: text('agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  name: text('name').notNull(),
+  value: numeric('value', { precision: 12, scale: 2 }).notNull().default('0'),
+  unit: text('unit').notNull().default('tasks'),
+  proof: text('proof').notNull(),
+  status: resultStatus('status').notNull().default('projected'),
   createdAt,
 });
 
@@ -237,6 +280,8 @@ export const workspaceRelations = relations(workspaces, ({ one, many }) => ({
   digitalFtes: many(digitalFtes),
   policies: many(policies),
   decisions: many(decisionLedger),
+  workflowRuns: many(workflowRuns),
+  businessResults: many(businessResults),
 }));
 
 export const departmentRelations = relations(departments, ({ one, many }) => ({
@@ -247,4 +292,11 @@ export const departmentRelations = relations(departments, ({ one, many }) => ({
 export const digitalFteRelations = relations(digitalFtes, ({ one }) => ({
   workspace: one(workspaces, { fields: [digitalFtes.workspaceId], references: [workspaces.id] }),
   department: one(departments, { fields: [digitalFtes.departmentId], references: [departments.id] }),
+}));
+
+export const workflowRunRelations = relations(workflowRuns, ({ one, many }) => ({
+  workspace: one(workspaces, { fields: [workflowRuns.workspaceId], references: [workspaces.id] }),
+  workflow: one(workflows, { fields: [workflowRuns.workflowId], references: [workflows.id] }),
+  agent: one(digitalFtes, { fields: [workflowRuns.agentId], references: [digitalFtes.id] }),
+  steps: many(workflowStepRuns),
 }));

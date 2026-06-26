@@ -16,6 +16,8 @@ CREATE TYPE agent_status AS ENUM ('healthy', 'warning', 'blocked', 'throttled', 
 CREATE TYPE policy_mode AS ENUM ('auto_approve', 'require_approval', 'block', 'throttle', 'pause', 'escalate');
 CREATE TYPE decision_status AS ENUM ('pending', 'approved', 'rejected', 'blocked', 'executed', 'throttled', 'paused');
 CREATE TYPE event_severity AS ENUM ('info', 'warning', 'high', 'critical');
+CREATE TYPE workflow_run_status AS ENUM ('queued', 'running', 'waiting_approval', 'completed', 'failed');
+CREATE TYPE result_status AS ENUM ('projected', 'verified', 'blocked');
 
 CREATE TABLE "user" (
   id text PRIMARY KEY,
@@ -138,6 +140,47 @@ CREATE TABLE workflows (
   approval_points jsonb NOT NULL DEFAULT '[]'::jsonb,
   success_metric text NOT NULL,
   failure_path text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE workflow_runs (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  workflow_id text NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
+  agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  status workflow_run_status NOT NULL DEFAULT 'queued',
+  trigger_snapshot text NOT NULL,
+  result_summary text NOT NULL DEFAULT 'Waiting for execution',
+  output_artifacts jsonb NOT NULL DEFAULT '[]'::jsonb,
+  cost_usd numeric(10, 2) NOT NULL DEFAULT 0,
+  duration_ms integer NOT NULL DEFAULT 0,
+  started_at timestamptz,
+  completed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE workflow_step_runs (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  workflow_run_id text NOT NULL REFERENCES workflow_runs(id) ON DELETE CASCADE,
+  step_index integer NOT NULL,
+  step_name text NOT NULL,
+  status workflow_run_status NOT NULL DEFAULT 'completed',
+  evidence text NOT NULL,
+  tool_used text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE business_results (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  workflow_run_id text REFERENCES workflow_runs(id) ON DELETE SET NULL,
+  agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  name text NOT NULL,
+  value numeric(12, 2) NOT NULL DEFAULT 0,
+  unit text NOT NULL DEFAULT 'tasks',
+  proof text NOT NULL,
+  status result_status NOT NULL DEFAULT 'projected',
   created_at timestamptz NOT NULL DEFAULT now()
 );
 

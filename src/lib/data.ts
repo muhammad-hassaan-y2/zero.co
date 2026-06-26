@@ -1,11 +1,11 @@
 import 'server-only';
 import { desc, eq } from 'drizzle-orm';
-import { db, boardReports, companyBlueprints, decisionLedger, departments, digitalFtes, policies, simulationEvents, sops, workflows } from '@/db';
+import { db, boardReports, businessResults, companyBlueprints, decisionLedger, departments, digitalFtes, policies, simulationEvents, sops, workflowRuns, workflowStepRuns, workflows } from '@/db';
 import { requireWorkspace } from '@/lib/session';
 
 export async function getWorkspaceData() {
   const { user, workspace } = await requireWorkspace();
-  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows] = await Promise.all([
+  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows] = await Promise.all([
     db.select().from(departments).where(eq(departments.workspaceId, workspace.id)),
     db.select().from(digitalFtes).where(eq(digitalFtes.workspaceId, workspace.id)),
     db.select().from(workflows).where(eq(workflows.workspaceId, workspace.id)),
@@ -15,12 +15,24 @@ export async function getWorkspaceData() {
     db.select().from(companyBlueprints).where(eq(companyBlueprints.workspaceId, workspace.id)).orderBy(desc(companyBlueprints.createdAt)),
     db.select().from(sops).where(eq(sops.workspaceId, workspace.id)).orderBy(desc(sops.createdAt)),
     db.select().from(boardReports).where(eq(boardReports.workspaceId, workspace.id)).orderBy(desc(boardReports.createdAt)),
+    db.select().from(workflowRuns).where(eq(workflowRuns.workspaceId, workspace.id)).orderBy(desc(workflowRuns.createdAt)),
+    db.select().from(workflowStepRuns).where(eq(workflowStepRuns.workspaceId, workspace.id)).orderBy(desc(workflowStepRuns.createdAt)),
+    db.select().from(businessResults).where(eq(businessResults.workspaceId, workspace.id)).orderBy(desc(businessResults.createdAt)),
   ]);
 
   const spendToday = agentRows.reduce((sum, agent) => sum + Number(agent.costToday || 0), 0);
   const riskyActionsBlocked = decisionRows.filter((decision) => ['blocked', 'throttled', 'paused'].includes(decision.decision)).length;
   const humanApprovalsNeeded = decisionRows.filter((decision) => decision.decision === 'pending').length;
-  const tasksCompletedToday = eventRows.filter((event) => event.eventType === 'task_completed').length * 9 + decisionRows.filter((decision) => decision.decision === 'executed').length;
+  const verifiedTaskResults = resultRows
+    .filter((result) => result.status === 'verified' && result.unit === 'tasks')
+    .reduce((sum, result) => sum + Number(result.value || 0), 0);
+  const actionResults = resultRows
+    .filter((result) => result.status === 'verified' && result.unit === 'actions')
+    .reduce((sum, result) => sum + Number(result.value || 0), 0);
+  const hoursSavedResults = resultRows
+    .filter((result) => result.status === 'verified' && result.unit === 'hours')
+    .reduce((sum, result) => sum + Number(result.value || 0), 0);
+  const tasksCompletedToday = Math.round(verifiedTaskResults + actionResults + decisionRows.filter((decision) => decision.decision === 'executed').length);
   const avgSuccess = agentRows.length ? Math.round(agentRows.reduce((sum, agent) => sum + agent.successRate, 0) / agentRows.length) : 0;
   const operatingHealth = Math.max(55, Math.min(99, avgSuccess - humanApprovalsNeeded * 2 + riskyActionsBlocked));
 
@@ -36,15 +48,20 @@ export async function getWorkspaceData() {
     blueprint: blueprintRows[0],
     sops: sopRows,
     reports: reportRows,
+    workflowRuns: runRows,
+    workflowStepRuns: stepRunRows,
+    businessResults: resultRows,
     metrics: {
       digitalFtesActive: agentRows.filter((agent) => !['paused', 'blocked'].includes(agent.status)).length,
       tasksCompletedToday,
       aiSpendToday: spendToday,
       riskyActionsBlocked,
       humanApprovalsNeeded,
-      estimatedHoursSaved: Math.max(1, tasksCompletedToday * 0.35 + agentRows.length),
+      estimatedHoursSaved: Math.max(1, hoursSavedResults + tasksCompletedToday * 0.2 + agentRows.length),
       operatingHealth,
       agentRoi: spendToday > 0 ? Math.max(1.2, (tasksCompletedToday * 8) / spendToday) : 1,
+      workflowRunsCompleted: runRows.filter((run) => run.status === 'completed').length,
+      verifiedResults: resultRows.filter((result) => result.status === 'verified').length,
     },
   };
 }

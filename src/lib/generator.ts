@@ -20,9 +20,13 @@ type Profile = {
   customerOutcome?: string | null;
   coreDepartments?: string | null;
   existingHumanRoles?: string | null;
+  repetitiveWork?: string | null;
+  highRiskWork?: string | null;
   currentTools?: string | null;
   aiAutomationGoals?: string | null;
   actionsRequiringApproval?: string | null;
+  blockedActions?: string | null;
+  autoApprovedActions?: string | null;
   monthlyAiBudget?: string | number | null;
   riskTolerance?: 'low' | 'medium' | 'high' | 'critical';
 };
@@ -50,14 +54,73 @@ function customerResult(profile: Profile) {
   return (profile.customerOutcome || profile.problemSolved || profile.businessDescription).trim();
 }
 
+function splitInput(value?: string | null) {
+  return (value || '')
+    .split(/\n|,|;|\|/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function shortPhrase(value: string, fallback: string) {
+  const cleaned = value.replace(/[^a-zA-Z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+  return cleaned ? cleaned.split(' ').slice(0, 5).join(' ') : fallback;
+}
+
+function inferDomain(text: string) {
+  if (includesAny(text, ['shopify', 'ecommerce', 'store', 'cart', 'order', 'refund', 'return'])) return 'commerce';
+  if (includesAny(text, ['saas', 'subscription', 'churn', 'activation', 'trial', 'product'])) return 'saas';
+  if (includesAny(text, ['agency', 'client', 'deliverable', 'project', 'proposal'])) return 'agency';
+  if (includesAny(text, ['clinic', 'patient', 'appointment', 'intake', 'healthcare'])) return 'healthcare';
+  if (includesAny(text, ['real estate', 'property', 'listing', 'broker', 'tenant'])) return 'real-estate';
+  if (includesAny(text, ['finance', 'invoice', 'payment', 'billing', 'revenue'])) return 'finance';
+  return 'general';
+}
+
+function defaultToolStack(domain: string) {
+  const common = ['Amazon Bedrock', 'Decision Ledger', 'Company Memory'];
+  if (domain === 'commerce') return ['Shopify', 'Stripe', 'Gmail', 'Slack', ...common];
+  if (domain === 'saas') return ['Stripe', 'HubSpot', 'Intercom', 'Product Analytics', ...common];
+  if (domain === 'agency') return ['Notion', 'Linear', 'Gmail', 'Slack', ...common];
+  if (domain === 'healthcare') return ['Intake Forms', 'Calendar', 'Secure Notes', ...common];
+  if (domain === 'real-estate') return ['CRM', 'Email', 'Property Database', ...common];
+  if (domain === 'finance') return ['Stripe', 'QuickBooks', 'Spreadsheet', ...common];
+  return common;
+}
+
+function uniqueList(items: string[]) {
+  return Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).slice(0, 10);
+}
+
+function successMetricFor(result: string, domain: string) {
+  if (domain === 'commerce') return `Completed commerce outcome: ${result}, measured by recovered orders, refund leakage, and customer response time`;
+  if (domain === 'saas') return `Completed SaaS outcome: ${result}, measured by activation, churn risk reduction, and expansion signals`;
+  if (domain === 'agency') return `Completed client outcome: ${result}, measured by deliverable cycle time, approval rate, and client satisfaction`;
+  if (domain === 'finance') return `Completed finance outcome: ${result}, measured by recovered payments, invoice cycle time, and spend variance`;
+  return `Completed customer outcome: ${result}, measured by finished tasks, time saved, quality score, and blocked risk`;
+}
+
+function approvalItems(profile: Profile) {
+  const explicit = splitInput(profile.actionsRequiringApproval);
+  if (explicit.length) return explicit;
+  const highRisk = splitInput(profile.highRiskWork);
+  if (highRisk.length) return highRisk.map((item) => `Human approval before ${item}`);
+  return ['Human approval before financial, legal, production, or customer-impacting actions'];
+}
+
 export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
   const source = [
     profile.businessDescription,
     profile.customers,
     profile.coreDepartments,
     profile.existingHumanRoles,
+    profile.repetitiveWork,
+    profile.highRiskWork,
     profile.currentTools,
     profile.aiAutomationGoals,
+    profile.actionsRequiringApproval,
+    profile.blockedActions,
+    profile.autoApprovedActions,
   ]
     .filter(Boolean)
     .join(' ')
@@ -67,6 +130,15 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
   const dailyBudgetBase = Math.max(8, Math.round(monthlyBudget / 30 / 4));
   const workspaceId = profile.workspaceId;
   const result = customerResult(profile);
+  const domain = inferDomain(source);
+  const userTools = splitInput(profile.currentTools);
+  const automationGoals = splitInput(profile.aiAutomationGoals);
+  const repetitiveWork = splitInput(profile.repetitiveWork);
+  const approvalRules = approvalItems(profile);
+  const blockedActions = splitInput(profile.blockedActions);
+  const autoApprovedActions = splitInput(profile.autoApprovedActions);
+  const toolStack = uniqueList([...userTools, ...defaultToolStack(domain)]);
+  const resultName = shortPhrase(result, 'Customer Outcome');
 
   const departmentSpecs: {
     key: string;
@@ -82,6 +154,14 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     { key: 'knowledge', name: 'Knowledge & Data', purpose: 'Maintain source-of-truth memory, metrics, transcripts, and reusable company context.', kpis: ['Knowledge freshness', 'Data quality', 'Retrieval accuracy'], riskLevel: 'medium' as const },
     { key: 'qa', name: 'QA / Risk', purpose: 'Review outputs, detect risky behavior, and enforce governance policies.', kpis: ['Risky actions blocked', 'Review accuracy', 'Low-confidence catches'], riskLevel: 'high' as const },
   ];
+
+  departmentSpecs.push({
+    key: 'outcome-delivery',
+    name: `${resultName} Delivery`,
+    purpose: `Own the end-to-end delivery loop for ${result} across customer-facing and back-office workflows.`,
+    kpis: [successMetricFor(result, domain), 'Proof records created', 'Customer handoff quality'],
+    riskLevel: profile.riskTolerance === 'critical' ? 'critical' : 'medium',
+  });
 
   if (includesAny(source, ['support', 'ticket', 'customer service', 'helpdesk'])) {
     departmentSpecs.push({ key: 'support', name: 'Customer Support', purpose: 'Resolve customer issues with monitored autonomy.', kpis: ['Tickets resolved', 'CSAT', 'First response time'], riskLevel: 'medium' as const });
@@ -136,8 +216,8 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       departmentId: byName.get('Strategy & Architecture'),
       name: 'Company Architect Agent',
       role: 'AI-native company designer',
-      goal: 'Translate the paid customer result into departments, agents, workflows, policies, KPIs, proof points, and launch sequencing.',
-      tools: ['Bedrock', 'Outcome Map', 'Company Blueprint', 'Operating Model Canvas', 'Roadmap Planner'],
+      goal: `Translate "${result}" for ${profile.customers} into departments, agents, workflows, policies, KPIs, proof points, and launch sequencing.`,
+      tools: uniqueList(['Bedrock', 'Outcome Map', 'Company Blueprint', 'Operating Model Canvas', 'Roadmap Planner', ...toolStack]),
       autonomyLevel: 'suggest',
       dailyBudget: String(dailyBudgetBase),
       riskLevel: 'medium',
@@ -152,8 +232,8 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       departmentId: byName.get('Operations'),
       name: 'Workflow Architect Agent',
       role: 'Process mining and automation designer',
-      goal: 'Convert repetitive work into auditable result workflows with triggers, tools, quality gates, approvals, and fallback paths.',
-      tools: ['Workflow Builder', 'SOP Generator', 'Decision Ledger', 'Process Map'],
+      goal: `Convert ${repetitiveWork.length ? repetitiveWork.join(', ') : 'manual work'} into auditable workflows that produce ${result}.`,
+      tools: uniqueList(['Workflow Builder', 'SOP Generator', 'Decision Ledger', 'Process Map', ...toolStack]),
       autonomyLevel: 'suggest',
       dailyBudget: String(dailyBudgetBase),
       riskLevel: 'medium',
@@ -168,8 +248,8 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       departmentId: byName.get('AI Systems'),
       name: 'Live Voice Operator Agent',
       role: 'Real-time voice and text operator',
-      goal: 'Handle founder live calls, route questions to Bedrock, speak responses with Polly, and log useful operating context.',
-      tools: ['Browser Speech Recognition', 'Amazon Bedrock', 'Amazon Polly', 'Transcript Memory'],
+      goal: `Let the founder create, inspect, and run ${resultName.toLowerCase()} automations by voice or text while respecting approval rules.`,
+      tools: uniqueList(['Browser Speech Recognition', 'Amazon Bedrock', 'Amazon Polly', 'Transcript Memory', ...toolStack]),
       autonomyLevel: 'suggest',
       dailyBudget: String(dailyBudgetBase),
       riskLevel: 'medium',
@@ -262,6 +342,68 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
       costToday: cost,
     });
   };
+
+  addAgent(
+    `${resultName} Owner Agent`,
+    `${resultName} Delivery`,
+    'Outcome delivery owner',
+    `Own the measurable delivery of "${result}" for ${profile.customers}. This agent turns workflow runs into verified business result records.`,
+    uniqueList([...toolStack, 'Workflow Runtime', 'Results Center', 'Customer Context']),
+    profile.riskTolerance === 'critical' ? 'critical' : 'medium',
+    `Preparing the first proof-backed delivery loop for ${result}`,
+    91,
+    '4.10',
+  );
+
+  addAgent(
+    'Agent Developer Agent',
+    'AI Systems',
+    'Digital FTE designer and evaluator',
+    `Design new agents from user tasks with role, goal, tools, memory scope, allowed actions, blocked actions, approval gates, success metrics, and failure modes personalized to ${profile.customers}.`,
+    uniqueList(['Agent Spec Builder', 'Policy Engine', 'Workflow Runtime', 'Evaluation Rubrics', ...toolStack]),
+    'high',
+    'Generating stricter agent specs with permission boundaries and result metrics',
+    89,
+    '5.25',
+  );
+
+  addAgent(
+    'Tool Connector Agent',
+    'AI Systems',
+    'Integration planner and tool health operator',
+    `Map the user's tools (${toolStack.join(', ')}) into safe workflow steps, permission scopes, webhooks, and fallback behavior.`,
+    uniqueList(['Integration Registry', 'Webhook Tester', 'Credential Scope Review', ...toolStack]),
+    'high',
+    'Checking which tools are ready for executable workflows',
+    86,
+    '3.70',
+  );
+
+  addAgent(
+    'Result QA Agent',
+    'QA / Risk',
+    'Outcome evaluator and quality gate',
+    `Evaluate whether outputs actually create "${result}" instead of generic activity. Block weak, risky, or unproven results.`,
+    uniqueList(['Result Rubric', 'Evidence Review', 'Policy Engine', 'Decision Ledger']),
+    'high',
+    'Defining quality gates and proof requirements for generated workflows',
+    90,
+    '3.95',
+  );
+
+  automationGoals.slice(0, 3).forEach((goal, index) => {
+    addAgent(
+      `${shortPhrase(goal, `Automation ${index + 1}`)} Agent`,
+      `${resultName} Delivery`,
+      'Personalized automation operator',
+      `Automate "${goal}" for ${profile.customers} and prove impact against: ${result}.`,
+      uniqueList([...toolStack, 'Workflow Runtime', 'Approval Queue']),
+      profile.riskTolerance === 'low' ? 'medium' : profile.riskTolerance || 'medium',
+      `Designing execution steps for ${goal}`,
+      88 - index,
+      String((3.2 + index).toFixed(2)),
+    );
+  });
 
   if (byName.has('Customer Support')) addAgent('Support Agent', 'Customer Support', 'Customer support digital FTE', 'Resolve customer issues using SOPs and escalation policies.', ['Helpdesk', 'Knowledge Base', 'CRM'], 'medium', 'Resolving customer ticket queue', 94, '6.20');
   if (byName.has('Refund Operations')) addAgent('Refund Agent', 'Refund Operations', 'Refund policy operator', 'Evaluate refund requests and request approval for high-risk refunds.', ['Order System', 'Refund Policy', 'Approval Queue'], 'high', 'Waiting on $1,200 refund approval', 81, '5.40');
@@ -358,6 +500,90 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     },
   ];
 
+  workflowRows.push({
+    id: nanoid(),
+    workspaceId,
+    name: `${resultName} Result Delivery Loop`,
+    trigger: `New customer, request, account, or task related to: ${result}`,
+    ownerAgentId: agentByName.get(`${resultName} Owner Agent`),
+    steps: [
+      `Identify customer context for ${profile.customers}`,
+      `Classify the desired result: ${result}`,
+      `Select the right agent and tool path from ${toolStack.slice(0, 4).join(', ')}`,
+      'Check policy, risk, and approval requirements',
+      'Execute or prepare the workflow run',
+      'Create proof record in Results Center',
+      'Write decision, cost, and next action to ledger',
+    ],
+    toolsUsed: uniqueList([...toolStack, 'Workflow Runtime', 'Results Center']),
+    approvalPoints: approvalRules,
+    successMetric: successMetricFor(result, domain),
+    failurePath: 'Stop execution, store failed step evidence, and ask the founder for the missing data or approval.',
+  });
+
+  workflowRows.push({
+    id: nanoid(),
+    workspaceId,
+    name: 'Personalized Agent Development Workflow',
+    trigger: 'User asks to create or improve an AI agent',
+    ownerAgentId: agentByName.get('Agent Developer Agent'),
+    steps: [
+      'Parse requested business task and customer outcome',
+      'Infer agent role, tools, memory scopes, allowed actions, and blocked actions',
+      'Generate approval gates from risk and user preferences',
+      'Attach measurable success metrics and failure modes',
+      'Create matching workflow, policy, SOP, and ledger record',
+      'Run quality review against the result rubric',
+    ],
+    toolsUsed: uniqueList(['Agent Spec Builder', 'Policy Engine', 'SOP Generator', 'Workflow Runtime', ...toolStack]),
+    approvalPoints: approvalRules,
+    successMetric: 'Agent spec includes result ownership, tool permissions, blocked actions, approvals, metrics, and proof requirements',
+    failurePath: 'Reject generic agent spec and ask for sharper task/outcome context.',
+  });
+
+  workflowRows.push({
+    id: nanoid(),
+    workspaceId,
+    name: 'Tool-to-Result Integration Workflow',
+    trigger: 'User lists tools or requests task automation with external systems',
+    ownerAgentId: agentByName.get('Tool Connector Agent'),
+    steps: [
+      'Map each tool to required workflow capability',
+      'Define minimum permission scope',
+      'Create webhook or API action plan',
+      'Add fallback if the tool is unavailable',
+      'Route risky tool actions through approval',
+      'Attach tool evidence to workflow run',
+    ],
+    toolsUsed: uniqueList(['Integration Registry', 'Webhook Tester', 'Credential Scope Review', ...toolStack]),
+    approvalPoints: ['Human approval before credential changes, external sends, financial changes, or production mutations'],
+    successMetric: 'Every external tool has a clear permission scope, action plan, fallback, and evidence record',
+    failurePath: 'Keep workflow in simulation mode until integration requirements are complete.',
+  });
+
+  repetitiveWork.slice(0, 4).forEach((task) => {
+    workflowRows.push({
+      id: nanoid(),
+      workspaceId,
+      name: `${shortPhrase(task, 'Manual Task')} Automation Workflow`,
+      trigger: `Manual or recurring task detected: ${task}`,
+      ownerAgentId: agentByName.get(`${resultName} Owner Agent`) || agentByName.get('Workflow Architect Agent'),
+      steps: [
+        `Capture inputs needed for: ${task}`,
+        'Retrieve customer and company context',
+        `Use available tools: ${toolStack.slice(0, 4).join(', ')}`,
+        'Check blocked actions and approval gates',
+        'Execute safe steps or prepare approval package',
+        `Measure contribution to: ${result}`,
+        'Record proof, cost, and next action',
+      ],
+      toolsUsed: uniqueList([...toolStack, 'Decision Ledger']),
+      approvalPoints: approvalRules,
+      successMetric: `Reduced manual work for "${task}" while producing ${result}`,
+      failurePath: 'Escalate incomplete inputs or policy conflict to the founder.',
+    });
+  });
+
   if (agentByName.has('Support Agent')) workflowRows.push({
     id: nanoid(), workspaceId, name: 'Support Ticket Resolution', trigger: 'New customer support ticket', ownerAgentId: agentByName.get('Support Agent'),
     steps: ['Classify issue', 'Retrieve SOP', 'Draft response', 'Check confidence', 'Send or escalate'], toolsUsed: ['Helpdesk', 'Knowledge Base'], approvalPoints: ['Human review if confidence < 85%'], successMetric: 'Ticket resolved with high confidence', failurePath: 'Escalate to human support lead',
@@ -382,6 +608,48 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     { id: nanoid(), workspaceId, name: 'AWS credential scope policy', description: 'Agents may inspect AWS service health but cannot expand credential permissions.', condition: 'action == modify_aws_permissions', action: 'Block and notify founder', mode: 'block', riskLevel: 'critical', enabled: true },
     { id: nanoid(), workspaceId, name: 'Auto-act readiness gate', description: 'Agents require three successful simulations and explicit founder approval before auto-act autonomy.', condition: 'autonomy == auto_act AND simulations_passed < 3', action: 'Keep approval-required mode', mode: 'block', riskLevel: 'high', enabled: true },
   ];
+
+  approvalRules.slice(0, 5).forEach((rule) => {
+    policyRows.push({
+      id: nanoid(),
+      workspaceId,
+      name: `${shortPhrase(rule, 'Approval')} Approval Rule`,
+      description: `Personalized approval rule from onboarding: ${rule}`,
+      condition: rule,
+      action: 'Route to owner approval before execution',
+      mode: 'require_approval',
+      riskLevel: profile.riskTolerance === 'low' ? 'medium' : profile.riskTolerance || 'high',
+      enabled: true,
+    });
+  });
+
+  blockedActions.slice(0, 5).forEach((action) => {
+    policyRows.push({
+      id: nanoid(),
+      workspaceId,
+      name: `${shortPhrase(action, 'Blocked Action')} Block`,
+      description: `Personalized blocked action from onboarding: ${action}`,
+      condition: action,
+      action: 'Block action and write decision ledger record',
+      mode: 'block',
+      riskLevel: 'critical',
+      enabled: true,
+    });
+  });
+
+  autoApprovedActions.slice(0, 5).forEach((action) => {
+    policyRows.push({
+      id: nanoid(),
+      workspaceId,
+      name: `${shortPhrase(action, 'Auto Approved')} Auto Approval`,
+      description: `Personalized low-risk action allowed by the founder: ${action}`,
+      condition: action,
+      action: 'Auto-approve and log the action',
+      mode: 'auto_approve',
+      riskLevel: 'low',
+      enabled: true,
+    });
+  });
 
   const refundAgent = ftes.find((a) => a.name === 'Refund Agent') ?? ftes[0];
   const researchAgent = ftes.find((a) => a.name === 'Research Agent') ?? ftes[0];

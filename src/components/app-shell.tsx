@@ -9,6 +9,7 @@ const nav = [
   ['Digital FTEs', '/dashboard/digital-ftes'],
   ['Departments', '/dashboard/departments'],
   ['Workflows', '/dashboard/workflows'],
+  ['Results', '/dashboard/results'],
   ['SOPs', '/dashboard/sops'],
   ['Policies', '/dashboard/policies'],
   ['Simulation', '/dashboard/simulation'],
