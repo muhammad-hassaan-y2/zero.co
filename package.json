@@ -23,6 +23,7 @@
     "better-auth": "latest",
     "class-variance-authority": "latest",
     "clsx": "latest",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "latest",
     "framer-motion": "latest",
     "lucide-react": "latest",
@@ -35,6 +36,7 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@aws-sdk/rds-signer": "^3.1075.0",
     "@types/node": "latest",
     "@types/pg": "latest",
     "@types/react": "latest",

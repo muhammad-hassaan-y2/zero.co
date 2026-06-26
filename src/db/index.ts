@@ -280,16 +280,10 @@ function createMemoryPool() {
 
   const memDb = globalForPg.zerocoMemDb as ReturnType<typeof newDb>;
   const { Pool: MemoryPool, Client: MemoryClient } = memDb.adapters.createPg();
-  const stripUnsupportedPgOptions = (query: unknown) => {
+  const stripTypesParser = (query: unknown) => {
     if (query && typeof query === 'object' && 'types' in query) {
       const copy = { ...(query as Record<string, unknown>) };
       delete copy.types;
-      delete copy.rowMode;
-      return copy;
-    }
-    if (query && typeof query === 'object' && 'rowMode' in query) {
-      const copy = { ...(query as Record<string, unknown>) };
-      delete copy.rowMode;
       return copy;
     }
     return query;
@@ -297,7 +291,7 @@ function createMemoryPool() {
   const patchQuery = (target: { prototype: { query: (...args: unknown[]) => unknown } }) => {
     const original = target.prototype.query;
     target.prototype.query = function patchedQuery(query: unknown, ...args: unknown[]) {
-      return original.call(this, stripUnsupportedPgOptions(query), ...args);
+      return original.call(this, stripTypesParser(query), ...args);
     };
   };
   patchQuery(MemoryPool);
@@ -311,7 +305,28 @@ export const pool =
     ? createMemoryPool()
     : (() => {
         if (!process.env.DATABASE_URL) {
-          throw new Error('DATABASE_URL is required');
+          if (!process.env.DB_HOST) {
+            throw new Error('DATABASE_URL or DB_HOST is required');
+          }
+          
+          return new Pool({
+            host: process.env.DB_HOST,
+            port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
+            user: process.env.DB_USER,
+            database: process.env.DB_NAME,
+            password: async () => {
+              // Automatically fetch a fresh signed RDS IAM Authentication Token
+              const { Signer } = await import('@aws-sdk/rds-signer');
+              const signer = new Signer({
+                hostname: process.env.DB_HOST!,
+                port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
+                username: process.env.DB_USER || 'postgres',
+                region: process.env.AWS_REGION || 'us-east-1',
+              });
+              return signer.getAuthToken();
+            },
+            ssl: { rejectUnauthorized: false },
+          });
         }
 
         return new Pool({
@@ -322,8 +337,6 @@ export const pool =
             : { rejectUnauthorized: false },
         });
       })());
-
-if (process.env.NODE_ENV !== 'production') globalForPg.zerocoPool = pool;
 
 export const db = drizzle(pool, { schema });
 export * from './schema';
