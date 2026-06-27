@@ -36,29 +36,30 @@ export async function POST(request: Request) {
 
   const data = parsed.data;
 
-  const [profile] = await db
+  const profile = {
+    id: nanoid(),
+    workspaceId: workspace.id,
+    businessDescription: data.businessDescription,
+    customers: data.customers,
+    problemSolved: data.problemSolved,
+    customerOutcome: data.customerOutcome,
+    coreDepartments: data.coreDepartments,
+    existingHumanRoles: data.existingHumanRoles,
+    repetitiveWork: data.repetitiveWork,
+    highRiskWork: data.highRiskWork,
+    currentTools: data.currentTools,
+    aiAutomationGoals: data.aiAutomationGoals,
+    actionsRequiringApproval: data.actionsRequiringApproval,
+    blockedActions: data.blockedActions,
+    autoApprovedActions: data.autoApprovedActions,
+    monthlyAiBudget: String(data.monthlyAiBudget),
+    riskTolerance: data.riskTolerance,
+    onboardingCompleted: true,
+  };
+
+  await db
     .insert(onboardingProfiles)
-    .values({
-      id: nanoid(),
-      workspaceId: workspace.id,
-      businessDescription: data.businessDescription,
-      customers: data.customers,
-      problemSolved: data.problemSolved,
-      customerOutcome: data.customerOutcome,
-      coreDepartments: data.coreDepartments,
-      existingHumanRoles: data.existingHumanRoles,
-      repetitiveWork: data.repetitiveWork,
-      highRiskWork: data.highRiskWork,
-      currentTools: data.currentTools,
-      aiAutomationGoals: data.aiAutomationGoals,
-      actionsRequiringApproval: data.actionsRequiringApproval,
-      blockedActions: data.blockedActions,
-      autoApprovedActions: data.autoApprovedActions,
-      monthlyAiBudget: String(data.monthlyAiBudget),
-      riskTolerance: data.riskTolerance,
-      onboardingCompleted: true,
-    })
-    .returning();
+    .values(profile);
 
   const generated = generateCompanyOS(profile);
   generated.blueprint = await enhanceBlueprintWithBedrock(profile, generated.blueprint);

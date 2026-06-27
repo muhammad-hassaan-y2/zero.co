@@ -1,23 +1,65 @@
 import 'server-only';
-import { desc, eq } from 'drizzle-orm';
-import { db, boardReports, businessResults, companyBlueprints, decisionLedger, departments, digitalFtes, policies, simulationEvents, sops, workflowRuns, workflowStepRuns, workflows } from '@/db';
+import { pool } from '@/db';
 import { requireWorkspace } from '@/lib/session';
+
+type WorkspaceDataRecord = Record<string, any> & {
+  id: string;
+  workspaceId: string;
+  agentId?: string | null;
+  departmentId?: string | null;
+  ownerAgentId?: string | null;
+  name: string;
+  title: string;
+  status: string;
+  decision: string;
+  severity: string;
+  riskLevel: string;
+  autonomyLevel: string;
+  eventType: string;
+  policyMatched: string;
+  databaseReference: string;
+  approvedBy?: string | null;
+  createdAt: Date | string;
+  coreKpis: string[];
+  launchChecklist: string[];
+  recommendations: string[];
+  kpis: string[];
+  tools: string[];
+  steps: string[];
+  toolsUsed: string[];
+  approvalPoints: string[];
+  requiredTools: string[];
+  approvalRules: string[];
+};
+
+function camelKey(key: string) {
+  return key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function mapRow(row: Record<string, unknown>) {
+  return Object.fromEntries(Object.entries(row).map(([key, value]) => [camelKey(key), value])) as WorkspaceDataRecord;
+}
+
+async function workspaceRows(table: string, workspaceId: string, orderBy = 'created_at desc') {
+  const result = await pool.query(`select * from ${table} where workspace_id = $1 order by ${orderBy}`, [workspaceId]);
+  return result.rows.map(mapRow);
+}
 
 export async function getWorkspaceData() {
   const { user, workspace } = await requireWorkspace();
   const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows] = await Promise.all([
-    db.select().from(departments).where(eq(departments.workspaceId, workspace.id)),
-    db.select().from(digitalFtes).where(eq(digitalFtes.workspaceId, workspace.id)),
-    db.select().from(workflows).where(eq(workflows.workspaceId, workspace.id)),
-    db.select().from(policies).where(eq(policies.workspaceId, workspace.id)),
-    db.select().from(decisionLedger).where(eq(decisionLedger.workspaceId, workspace.id)).orderBy(desc(decisionLedger.createdAt)),
-    db.select().from(simulationEvents).where(eq(simulationEvents.workspaceId, workspace.id)).orderBy(desc(simulationEvents.createdAt)),
-    db.select().from(companyBlueprints).where(eq(companyBlueprints.workspaceId, workspace.id)).orderBy(desc(companyBlueprints.createdAt)),
-    db.select().from(sops).where(eq(sops.workspaceId, workspace.id)).orderBy(desc(sops.createdAt)),
-    db.select().from(boardReports).where(eq(boardReports.workspaceId, workspace.id)).orderBy(desc(boardReports.createdAt)),
-    db.select().from(workflowRuns).where(eq(workflowRuns.workspaceId, workspace.id)).orderBy(desc(workflowRuns.createdAt)),
-    db.select().from(workflowStepRuns).where(eq(workflowStepRuns.workspaceId, workspace.id)).orderBy(desc(workflowStepRuns.createdAt)),
-    db.select().from(businessResults).where(eq(businessResults.workspaceId, workspace.id)).orderBy(desc(businessResults.createdAt)),
+    workspaceRows('departments', workspace.id, 'created_at asc'),
+    workspaceRows('digital_ftes', workspace.id, 'created_at asc'),
+    workspaceRows('workflows', workspace.id, 'created_at asc'),
+    workspaceRows('policies', workspace.id, 'created_at asc'),
+    workspaceRows('decision_ledger', workspace.id),
+    workspaceRows('simulation_events', workspace.id),
+    workspaceRows('company_blueprints', workspace.id),
+    workspaceRows('sops', workspace.id),
+    workspaceRows('board_reports', workspace.id),
+    workspaceRows('workflow_runs', workspace.id),
+    workspaceRows('workflow_step_runs', workspace.id),
+    workspaceRows('business_results', workspace.id),
   ]);
 
   const spendToday = agentRows.reduce((sum, agent) => sum + Number(agent.costToday || 0), 0);

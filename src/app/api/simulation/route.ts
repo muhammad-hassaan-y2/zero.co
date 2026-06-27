@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import { eq } from 'drizzle-orm';
 import { db, digitalFtes, simulationEvents, decisionLedger } from '@/db';
 import { getApiWorkspace } from '@/lib/api-session';
+import { getWorkspaceData } from '@/lib/data';
 
 const eventTemplates = [
   { type: 'task_completed', title: 'Support Agent resolved 9 tickets', description: 'Routine customer tickets completed with SOP-backed responses.', severity: 'info' as const, status: 'closed' },
@@ -13,19 +14,18 @@ const eventTemplates = [
 ];
 
 export async function GET() {
-  const ctx = await getApiWorkspace();
-  if ('error' in ctx) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
-  const rows = await db.select().from(simulationEvents).where(eq(simulationEvents.workspaceId, ctx.workspace.id));
-  return NextResponse.json({ events: rows });
+  const data = await getWorkspaceData();
+  return NextResponse.json({ events: data.events });
 }
 
 export async function POST() {
   const ctx = await getApiWorkspace();
   if ('error' in ctx) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
-  const agents = await db.select().from(digitalFtes).where(eq(digitalFtes.workspaceId, ctx.workspace.id));
+  const { agents } = await getWorkspaceData();
   const template = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
   const agent = agents[Math.floor(Math.random() * Math.max(agents.length, 1))];
-  const [event] = await db.insert(simulationEvents).values({ id: nanoid(), workspaceId: ctx.workspace.id, agentId: agent?.id, eventType: template.type, title: template.title, description: template.description, severity: template.severity, status: template.status }).returning();
+  const event = { id: nanoid(), workspaceId: ctx.workspace.id, agentId: agent?.id, eventType: template.type, title: template.title, description: template.description, severity: template.severity, status: template.status };
+  await db.insert(simulationEvents).values(event);
   if (['approval_requested', 'cost_alert', 'risk_flagged', 'deploy_approval'].includes(template.type)) {
     await db.insert(decisionLedger).values({ id: nanoid(), workspaceId: ctx.workspace.id, agentId: agent?.id, departmentId: agent?.departmentId, action: template.title, policyMatched: template.type === 'cost_alert' ? 'Agent spend circuit breaker' : template.type === 'deploy_approval' ? 'Production deploy approval' : 'Bounded autonomy policy', riskLevel: template.severity === 'critical' ? 'critical' : template.severity === 'high' ? 'high' : 'medium', decision: template.status === 'blocked' ? 'blocked' : 'pending', result: template.status === 'blocked' ? 'Blocked before customer impact' : 'Waiting for human review', approvedBy: template.status === 'blocked' ? 'ZeroCo Policy Engine' : null, databaseReference: `aurora:decision:${nanoid(8)}` });
   }

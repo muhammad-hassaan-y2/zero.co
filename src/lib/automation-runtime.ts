@@ -6,6 +6,7 @@ import {
   db,
   decisionLedger,
   digitalFtes,
+  pool,
   simulationEvents,
   workflowRuns,
   workflowStepRuns,
@@ -40,30 +41,37 @@ function resultValueFor(workflowName: string, stepCount: number) {
   return { name: 'Automated business tasks completed', value: Math.max(1, stepCount), unit: 'tasks' };
 }
 
+function camelKey(key: string) {
+  return key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function mapRow(row: Record<string, unknown>) {
+  return Object.fromEntries(Object.entries(row).map(([key, value]) => [camelKey(key), value])) as any;
+}
+
 export async function runWorkflowForResult(input: RunWorkflowInput) {
-  const [workflow] = await db
-    .select()
-    .from(workflows)
-    .where(and(eq(workflows.id, input.workflowId), eq(workflows.workspaceId, input.workspaceId)));
+  const workflowResult = await pool.query('select * from workflows where id = $1 and workspace_id = $2 limit 1', [input.workflowId, input.workspaceId]);
+  const workflow = workflowResult.rows[0] ? mapRow(workflowResult.rows[0]) : null;
 
   if (!workflow) throw new Error('Workflow not found for this workspace.');
 
-  const [agent] = workflow.ownerAgentId
-    ? await db
-        .select()
-        .from(digitalFtes)
-        .where(and(eq(digitalFtes.id, workflow.ownerAgentId), eq(digitalFtes.workspaceId, input.workspaceId)))
-    : [];
+  const agentResult = workflow.ownerAgentId
+    ? await pool.query('select * from digital_ftes where id = $1 and workspace_id = $2 limit 1', [workflow.ownerAgentId, input.workspaceId])
+    : { rows: [] };
+  const agent = agentResult.rows[0] ? mapRow(agentResult.rows[0]) : null;
 
   const startedAt = new Date();
-  const steps = workflow.steps.length ? workflow.steps : ['Read trigger', 'Check policy', 'Produce result', 'Log evidence'];
-  const tools = workflow.toolsUsed.length ? workflow.toolsUsed : agent?.tools || ['ZeroCo Runtime'];
+  const workflowSteps = Array.isArray(workflow.steps) ? workflow.steps as string[] : [];
+  const workflowTools = Array.isArray(workflow.toolsUsed) ? workflow.toolsUsed as string[] : [];
+  const agentTools = Array.isArray(agent?.tools) ? agent.tools as string[] : [];
+  const steps = workflowSteps.length ? workflowSteps : ['Read trigger', 'Check policy', 'Produce result', 'Log evidence'];
+  const tools = workflowTools.length ? workflowTools : agentTools.length ? agentTools : ['ZeroCo Runtime'];
   const costUsd = Number((steps.length * 0.08 + tools.length * 0.03).toFixed(2));
   const durationMs = 1200 + steps.length * 350;
   const riskRequiresApproval = workflow.approvalPoints.length > 0 || ['high', 'critical'].includes(agent?.riskLevel || 'low');
-  const status = riskRequiresApproval ? 'waiting_approval' : 'completed';
+  const status: 'waiting_approval' | 'completed' = riskRequiresApproval ? 'waiting_approval' : 'completed';
 
-  const [run] = await db.insert(workflowRuns).values({
+  const run = {
     id: nanoid(),
     workspaceId: input.workspaceId,
     workflowId: workflow.id,
@@ -82,7 +90,8 @@ export async function runWorkflowForResult(input: RunWorkflowInput) {
     durationMs,
     startedAt,
     completedAt: status === 'completed' ? new Date(startedAt.getTime() + durationMs) : null,
-  }).returning();
+  };
+  await db.insert(workflowRuns).values(run);
 
   await db.insert(workflowStepRuns).values(steps.map((step, index) => ({
     id: nanoid(),
