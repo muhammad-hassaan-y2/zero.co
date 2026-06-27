@@ -29,6 +29,7 @@ type Profile = {
   autoApprovedActions?: string | null;
   monthlyAiBudget?: string | number | null;
   riskTolerance?: 'low' | 'medium' | 'high' | 'critical';
+  selectedFtes?: string[] | null;
 };
 
 type GeneratedCompanyOS = {
@@ -92,6 +93,14 @@ function uniqueList(items: string[]) {
   return Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).slice(0, 10);
 }
 
+function selectedFteSet(profile: Profile) {
+  return new Set((profile.selectedFtes || []).map((item) => item.trim()).filter(Boolean));
+}
+
+function wantsFte(selected: Set<string>, id: string, fallback: boolean) {
+  return selected.size > 0 ? selected.has(id) : fallback;
+}
+
 function successMetricFor(result: string, domain: string) {
   if (domain === 'commerce') return `Completed commerce outcome: ${result}, measured by recovered orders, refund leakage, and customer response time`;
   if (domain === 'saas') return `Completed SaaS outcome: ${result}, measured by activation, churn risk reduction, and expansion signals`;
@@ -139,6 +148,7 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
   const autoApprovedActions = splitInput(profile.autoApprovedActions);
   const toolStack = uniqueList([...userTools, ...defaultToolStack(domain)]);
   const resultName = shortPhrase(result, 'Customer Outcome');
+  const selectedFtes = selectedFteSet(profile);
 
   const departmentSpecs: {
     key: string;
@@ -355,41 +365,47 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     '4.10',
   );
 
-  addAgent(
-    'Agent Developer Agent',
-    'AI Systems',
-    'Digital FTE designer and evaluator',
-    `Design new agents from user tasks with role, goal, tools, memory scope, allowed actions, blocked actions, approval gates, success metrics, and failure modes personalized to ${profile.customers}.`,
-    uniqueList(['Agent Spec Builder', 'Policy Engine', 'Workflow Runtime', 'Evaluation Rubrics', ...toolStack]),
-    'high',
-    'Generating stricter agent specs with permission boundaries and result metrics',
-    89,
-    '5.25',
-  );
+  if (wantsFte(selectedFtes, 'agent_developer', true)) {
+    addAgent(
+      'Agent Developer Agent',
+      'AI Systems',
+      'Digital FTE designer and evaluator',
+      `Design new agents from user tasks with role, goal, tools, memory scope, allowed actions, blocked actions, approval gates, success metrics, and failure modes personalized to ${profile.customers}.`,
+      uniqueList(['Agent Spec Builder', 'Policy Engine', 'Workflow Runtime', 'Evaluation Rubrics', ...toolStack]),
+      'high',
+      'Generating stricter agent specs with permission boundaries and result metrics',
+      89,
+      '5.25',
+    );
+  }
 
-  addAgent(
-    'Tool Connector Agent',
-    'AI Systems',
-    'Integration planner and tool health operator',
-    `Map the user's tools (${toolStack.join(', ')}) into safe workflow steps, permission scopes, webhooks, and fallback behavior.`,
-    uniqueList(['Integration Registry', 'Webhook Tester', 'Credential Scope Review', ...toolStack]),
-    'high',
-    'Checking which tools are ready for executable workflows',
-    86,
-    '3.70',
-  );
+  if (wantsFte(selectedFtes, 'tool_connector', true)) {
+    addAgent(
+      'Tool Connector Agent',
+      'AI Systems',
+      'Integration planner and tool health operator',
+      `Map the user's tools (${toolStack.join(', ')}) into safe workflow steps, permission scopes, webhooks, and fallback behavior.`,
+      uniqueList(['Integration Registry', 'Webhook Tester', 'Credential Scope Review', ...toolStack]),
+      'high',
+      'Checking which tools are ready for executable workflows',
+      86,
+      '3.70',
+    );
+  }
 
-  addAgent(
-    'Result QA Agent',
-    'QA / Risk',
-    'Outcome evaluator and quality gate',
-    `Evaluate whether outputs actually create "${result}" instead of generic activity. Block weak, risky, or unproven results.`,
-    uniqueList(['Result Rubric', 'Evidence Review', 'Policy Engine', 'Decision Ledger']),
-    'high',
-    'Defining quality gates and proof requirements for generated workflows',
-    90,
-    '3.95',
-  );
+  if (wantsFte(selectedFtes, 'result_qa', true)) {
+    addAgent(
+      'Result QA Agent',
+      'QA / Risk',
+      'Outcome evaluator and quality gate',
+      `Evaluate whether outputs actually create "${result}" instead of generic activity. Block weak, risky, or unproven results.`,
+      uniqueList(['Result Rubric', 'Evidence Review', 'Policy Engine', 'Decision Ledger']),
+      'high',
+      'Defining quality gates and proof requirements for generated workflows',
+      90,
+      '3.95',
+    );
+  }
 
   automationGoals.slice(0, 3).forEach((goal, index) => {
     addAgent(
@@ -405,12 +421,12 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     );
   });
 
-  if (byName.has('Customer Support')) addAgent('Support Agent', 'Customer Support', 'Customer support digital FTE', 'Resolve customer issues using SOPs and escalation policies.', ['Helpdesk', 'Knowledge Base', 'CRM'], 'medium', 'Resolving customer ticket queue', 94, '6.20');
-  if (byName.has('Refund Operations')) addAgent('Refund Agent', 'Refund Operations', 'Refund policy operator', 'Evaluate refund requests and request approval for high-risk refunds.', ['Order System', 'Refund Policy', 'Approval Queue'], 'high', 'Waiting on $1,200 refund approval', 81, '5.40');
-  if (byName.has('Sales')) addAgent('Sales Agent', 'Sales', 'Pipeline and outreach operator', 'Qualify leads and draft compliant outreach sequences.', ['CRM', 'Email', 'Lead Database'], 'medium', 'Generating 12 qualified lead briefs', 86, '7.15');
-  if (byName.has('Finance')) addAgent('Finance Agent', 'Finance', 'Billing follow-up operator', 'Track invoice follow-ups and spending variance.', ['Billing System', 'Spreadsheet', 'Email'], 'high', 'Detecting unpaid invoice follow-up', 89, '2.95');
-  if (byName.has('DevOps')) addAgent('DevOps Agent', 'DevOps', 'Production operations operator', 'Monitor deployment risk and request approval for production changes.', ['Vercel', 'Logs', 'Incident Board'], 'critical', 'Requesting production deploy approval', 78, '8.80');
-  if (byName.has('Research')) addAgent('Research Agent', 'Research', 'Market research operator', 'Produce sourced research under cost circuit-breaker limits.', ['Web Research', 'Docs', 'Source Checker'], 'medium', 'Throttled after spend spike', 62, '18.20');
+  if (byName.has('Customer Support') && wantsFte(selectedFtes, 'support', true)) addAgent('Support Agent', 'Customer Support', 'Customer support digital FTE', 'Resolve customer issues using SOPs and escalation policies.', ['Helpdesk', 'Knowledge Base', 'CRM'], 'medium', 'Resolving customer ticket queue', 94, '6.20');
+  if (byName.has('Refund Operations') && wantsFte(selectedFtes, 'refund', true)) addAgent('Refund Agent', 'Refund Operations', 'Refund policy operator', 'Evaluate refund requests and request approval for high-risk refunds.', ['Order System', 'Refund Policy', 'Approval Queue'], 'high', 'Waiting on $1,200 refund approval', 81, '5.40');
+  if (byName.has('Sales') && wantsFte(selectedFtes, 'sales', true)) addAgent('Sales Agent', 'Sales', 'Pipeline and outreach operator', 'Qualify leads and draft compliant outreach sequences.', ['CRM', 'Email', 'Lead Database'], 'medium', 'Generating 12 qualified lead briefs', 86, '7.15');
+  if (byName.has('Finance') && wantsFte(selectedFtes, 'finance', true)) addAgent('Finance Agent', 'Finance', 'Billing follow-up operator', 'Track invoice follow-ups and spending variance.', ['Billing System', 'Spreadsheet', 'Email'], 'high', 'Detecting unpaid invoice follow-up', 89, '2.95');
+  if (byName.has('DevOps') && wantsFte(selectedFtes, 'devops', true)) addAgent('DevOps Agent', 'DevOps', 'Production operations operator', 'Monitor deployment risk and request approval for production changes.', ['Vercel', 'Logs', 'Incident Board'], 'critical', 'Requesting production deploy approval', 78, '8.80');
+  if (byName.has('Research') && wantsFte(selectedFtes, 'research', true)) addAgent('Research Agent', 'Research', 'Market research operator', 'Produce sourced research under cost circuit-breaker limits.', ['Web Research', 'Docs', 'Source Checker'], 'medium', 'Throttled after spend spike', 62, '18.20');
 
   const agentByName = new Map(ftes.map((a) => [a.name, a.id]));
   const workflowRows: InferInsertModel<typeof workflows>[] = [
@@ -521,45 +537,49 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
     failurePath: 'Stop execution, store failed step evidence, and ask the founder for the missing data or approval.',
   });
 
-  workflowRows.push({
-    id: nanoid(),
-    workspaceId,
-    name: 'Personalized Agent Development Workflow',
-    trigger: 'User asks to create or improve an AI agent',
-    ownerAgentId: agentByName.get('Agent Developer Agent'),
-    steps: [
-      'Parse requested business task and customer outcome',
-      'Infer agent role, tools, memory scopes, allowed actions, and blocked actions',
-      'Generate approval gates from risk and user preferences',
-      'Attach measurable success metrics and failure modes',
-      'Create matching workflow, policy, SOP, and ledger record',
-      'Run quality review against the result rubric',
-    ],
-    toolsUsed: uniqueList(['Agent Spec Builder', 'Policy Engine', 'SOP Generator', 'Workflow Runtime', ...toolStack]),
-    approvalPoints: approvalRules,
-    successMetric: 'Agent spec includes result ownership, tool permissions, blocked actions, approvals, metrics, and proof requirements',
-    failurePath: 'Reject generic agent spec and ask for sharper task/outcome context.',
-  });
+  if (agentByName.has('Agent Developer Agent')) {
+    workflowRows.push({
+      id: nanoid(),
+      workspaceId,
+      name: 'Personalized Agent Development Workflow',
+      trigger: 'User asks to create or improve an AI agent',
+      ownerAgentId: agentByName.get('Agent Developer Agent'),
+      steps: [
+        'Parse requested business task and customer outcome',
+        'Infer agent role, tools, memory scopes, allowed actions, and blocked actions',
+        'Generate approval gates from risk and user preferences',
+        'Attach measurable success metrics and failure modes',
+        'Create matching workflow, policy, SOP, and ledger record',
+        'Run quality review against the result rubric',
+      ],
+      toolsUsed: uniqueList(['Agent Spec Builder', 'Policy Engine', 'SOP Generator', 'Workflow Runtime', ...toolStack]),
+      approvalPoints: approvalRules,
+      successMetric: 'Agent spec includes result ownership, tool permissions, blocked actions, approvals, metrics, and proof requirements',
+      failurePath: 'Reject generic agent spec and ask for sharper task/outcome context.',
+    });
+  }
 
-  workflowRows.push({
-    id: nanoid(),
-    workspaceId,
-    name: 'Tool-to-Result Integration Workflow',
-    trigger: 'User lists tools or requests task automation with external systems',
-    ownerAgentId: agentByName.get('Tool Connector Agent'),
-    steps: [
-      'Map each tool to required workflow capability',
-      'Define minimum permission scope',
-      'Create webhook or API action plan',
-      'Add fallback if the tool is unavailable',
-      'Route risky tool actions through approval',
-      'Attach tool evidence to workflow run',
-    ],
-    toolsUsed: uniqueList(['Integration Registry', 'Webhook Tester', 'Credential Scope Review', ...toolStack]),
-    approvalPoints: ['Human approval before credential changes, external sends, financial changes, or production mutations'],
-    successMetric: 'Every external tool has a clear permission scope, action plan, fallback, and evidence record',
-    failurePath: 'Keep workflow in simulation mode until integration requirements are complete.',
-  });
+  if (agentByName.has('Tool Connector Agent')) {
+    workflowRows.push({
+      id: nanoid(),
+      workspaceId,
+      name: 'Tool-to-Result Integration Workflow',
+      trigger: 'User lists tools or requests task automation with external systems',
+      ownerAgentId: agentByName.get('Tool Connector Agent'),
+      steps: [
+        'Map each tool to required workflow capability',
+        'Define minimum permission scope',
+        'Create webhook or API action plan',
+        'Add fallback if the tool is unavailable',
+        'Route risky tool actions through approval',
+        'Attach tool evidence to workflow run',
+      ],
+      toolsUsed: uniqueList(['Integration Registry', 'Webhook Tester', 'Credential Scope Review', ...toolStack]),
+      approvalPoints: ['Human approval before credential changes, external sends, financial changes, or production mutations'],
+      successMetric: 'Every external tool has a clear permission scope, action plan, fallback, and evidence record',
+      failurePath: 'Keep workflow in simulation mode until integration requirements are complete.',
+    });
+  }
 
   repetitiveWork.slice(0, 4).forEach((task) => {
     workflowRows.push({
@@ -653,6 +673,7 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
 
   const refundAgent = ftes.find((a) => a.name === 'Refund Agent') ?? ftes[0];
   const researchAgent = ftes.find((a) => a.name === 'Research Agent') ?? ftes[0];
+  const supportAgent = ftes.find((a) => a.name === 'Support Agent') ?? ftes[0];
   const qaAgent = ftes.find((a) => a.name === 'Policy Guardian Agent') ?? ftes[0];
   const modelRouterAgent = ftes.find((a) => a.name === 'Model Router Agent') ?? ftes[0];
   const voiceAgent = ftes.find((a) => a.name === 'Live Voice Operator Agent') ?? ftes[0];
@@ -666,7 +687,7 @@ export function generateCompanyOS(profile: Profile): GeneratedCompanyOS {
   ];
 
   const events: InferInsertModel<typeof simulationEvents>[] = [
-    { id: nanoid(), workspaceId, agentId: agentByName.get('Support Agent'), eventType: 'task_completed', title: 'Support Agent resolved 18 tickets', description: 'Resolved routine tickets using SOP-backed responses.', severity: 'info', status: 'closed' },
+    { id: nanoid(), workspaceId, agentId: supportAgent.id, eventType: 'task_completed', title: `${supportAgent.name} completed result work`, description: 'Completed routine work using SOP-backed responses.', severity: 'info', status: 'closed' },
     { id: nanoid(), workspaceId, agentId: refundAgent.id, eventType: 'approval_requested', title: 'Refund Agent requested approval', description: 'A $1,200 refund matched high-value financial approval policy.', severity: 'high', status: 'pending' },
     { id: nanoid(), workspaceId, agentId: researchAgent.id, eventType: 'cost_alert', title: 'Research Agent exceeded spend limit', description: 'Spend rose above 3x baseline with low useful-output rate; agent was throttled.', severity: 'warning', status: 'throttled' },
     { id: nanoid(), workspaceId, agentId: qaAgent.id, eventType: 'risk_flagged', title: 'Policy Guardian Agent flagged 3 risky responses', description: 'Low-confidence outputs were blocked before customer delivery.', severity: 'warning', status: 'open' },

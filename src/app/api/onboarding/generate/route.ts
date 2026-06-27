@@ -23,6 +23,7 @@ const onboardingSchema = z.object({
   autoApprovedActions: z.string().optional().default(''),
   monthlyAiBudget: z.coerce.number().min(0).default(500),
   riskTolerance: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+  selectedFtes: z.array(z.string()).optional().default([]),
 });
 
 export async function POST(request: Request) {
@@ -61,8 +62,9 @@ export async function POST(request: Request) {
     .insert(onboardingProfiles)
     .values(profile);
 
-  const generated = generateCompanyOS(profile);
-  generated.blueprint = await enhanceBlueprintWithBedrock(profile, generated.blueprint);
+  const generationProfile = { ...profile, selectedFtes: data.selectedFtes };
+  const generated = generateCompanyOS(generationProfile);
+  generated.blueprint = await enhanceBlueprintWithBedrock(generationProfile, generated.blueprint);
 
   // Idempotent for hackathon/dev: clear generated rows before regenerating.
   await db.transaction(async (tx) => {
