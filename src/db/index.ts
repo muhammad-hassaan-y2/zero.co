@@ -311,7 +311,27 @@ export const pool =
     ? createMemoryPool()
     : (() => {
         if (!process.env.DATABASE_URL) {
-          throw new Error('DATABASE_URL is required');
+          if (!process.env.DB_HOST) {
+            throw new Error('DATABASE_URL or DB_HOST is required');
+          }
+
+          return new Pool({
+            host: process.env.DB_HOST,
+            port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
+            user: process.env.DB_USER || 'postgres',
+            database: process.env.DB_NAME || 'postgres',
+            password: process.env.DB_PASSWORD || (async () => {
+              const { Signer } = await import('@aws-sdk/rds-signer');
+              const signer = new Signer({
+                hostname: process.env.DB_HOST!,
+                port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
+                username: process.env.DB_USER || 'postgres',
+                region: process.env.AWS_REGION || 'us-east-1',
+              });
+              return signer.getAuthToken();
+            }),
+            ssl: { rejectUnauthorized: false },
+          });
         }
 
         return new Pool({
