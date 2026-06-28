@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, ClipboardList, Search, Send, Sparkles, UserPlus } from 'lucide-react';
 
@@ -11,10 +11,26 @@ type Query = { id: string; customerName: string; customerEmail: string; companyN
 type Reply = { id: string; queryId?: string | null; subject: string; body: string; status: string; failureReason?: string | null };
 type Account = { id: string; name: string };
 type Contact = { id: string; name: string; email: string };
+type Activity = { id: string; type: string; title: string; status: string; body?: string | null };
 
 async function readError(response: Response, fallback: string) {
   const payload = await response.json().catch(() => null);
   return payload?.error || fallback;
+}
+
+export function CrmRealtimeRefresh() {
+  const router = useRouter();
+  const [lastRefresh, setLastRefresh] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setLastRefresh(new Date());
+      router.refresh();
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [router]);
+
+  return <p className="mt-3 text-sm text-white/45">Live CRM refresh every 15s. Last sync: {lastRefresh.toLocaleTimeString()}</p>;
 }
 
 export function AddLeadForm({ agents }: { agents: Agent[] }) {
@@ -177,6 +193,44 @@ export function SalesEmailActions({ lead, email }: { lead: Lead; email?: Email }
           </button>
         )}
       </div>
+      {error && <p className="mt-3 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+    </div>
+  );
+}
+
+export function LeadStageControl({ lead }: { lead: Lead }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function changeStatus(status: string) {
+    setLoading(true);
+    setError(null);
+    const response = await fetch(`/api/sales/leads/${lead.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, reason: `Moved from ${lead.status} to ${status} from CRM pipeline.` }),
+    });
+    setLoading(false);
+    if (!response.ok) {
+      setError(await readError(response, 'Lead stage update failed.'));
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <div className="mt-4">
+      <select
+        value={lead.status === 'closed_won' ? 'closed_won' : lead.status}
+        disabled={loading || lead.status === 'closed_won'}
+        onChange={(event) => changeStatus(event.target.value)}
+        className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none disabled:opacity-60"
+      >
+        {['new', 'qualified', 'contacted', 'replied', 'negotiating', 'closed_lost', 'disqualified', 'closed_won'].map((status) => (
+          <option key={status} className="bg-black" value={status} disabled={status === 'closed_won'}>{status}</option>
+        ))}
+      </select>
       {error && <p className="mt-3 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
     </div>
   );
@@ -530,5 +584,38 @@ export function AddActivityForm({ leads, contacts, agents }: { leads: Lead[]; co
       {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
       <button disabled={loading} className="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-60">{loading ? 'Adding...' : 'Add activity'}</button>
     </form>
+  );
+}
+
+export function ActivityActions({ activity }: { activity: Activity }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function setStatus(status: 'done' | 'blocked' | 'open') {
+    setLoading(status);
+    setError(null);
+    const response = await fetch(`/api/crm/activities/${activity.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, body: `Marked ${status} from CRM dashboard.` }),
+    });
+    setLoading(null);
+    if (!response.ok) {
+      setError(await readError(response, 'Activity update failed.'));
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <div className="mt-3">
+      <div className="flex flex-wrap gap-2">
+        {activity.status !== 'done' && <button onClick={() => setStatus('done')} disabled={loading !== null} className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-100 disabled:opacity-60">{loading === 'done' ? 'Saving...' : 'Mark done'}</button>}
+        {activity.status !== 'blocked' && <button onClick={() => setStatus('blocked')} disabled={loading !== null} className="rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-xs text-red-100 disabled:opacity-60">{loading === 'blocked' ? 'Saving...' : 'Block'}</button>}
+        {activity.status !== 'open' && <button onClick={() => setStatus('open')} disabled={loading !== null} className="rounded-lg border border-white/10 bg-white/[.06] px-3 py-2 text-xs text-white disabled:opacity-60">{loading === 'open' ? 'Saving...' : 'Reopen'}</button>}
+      </div>
+      {error && <p className="mt-3 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+    </div>
   );
 }

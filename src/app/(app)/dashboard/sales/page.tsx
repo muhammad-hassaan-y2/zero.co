@@ -1,4 +1,4 @@
-import { AddAccountForm, AddActivityForm, AddContactForm, AddCustomerQueryForm, AddLeadForm, CloseLeadAction, CustomerReplyActions, LeadDiscoveryForm, SalesEmailActions } from '@/components/sales-execution';
+import { ActivityActions, AddAccountForm, AddActivityForm, AddContactForm, AddCustomerQueryForm, AddLeadForm, CloseLeadAction, CrmRealtimeRefresh, CustomerReplyActions, LeadDiscoveryForm, LeadStageControl, SalesEmailActions } from '@/components/sales-execution';
 import { Badge, Card, Metric } from '@/components/status';
 import { getWorkspaceData } from '@/lib/data';
 
@@ -12,6 +12,7 @@ export default async function SalesExecutionPage() {
       <div className="border-b border-white/10 pb-6">
         <h1 className="text-4xl font-semibold tracking-tight">Lead & Customer CRM</h1>
         <p className="mt-3 max-w-3xl text-white/60">Manage leads, customer queries, Bedrock-drafted outreach/replies, approval gates, Amazon SES sending, and verified evidence.</p>
+        <CrmRealtimeRefresh />
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -38,6 +39,14 @@ export default async function SalesExecutionPage() {
         <section className="xl:col-span-2">
           <section>
             <h2 className="text-2xl font-semibold">Lead pipeline</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              {['new', 'qualified', 'contacted', 'negotiating'].map((stage) => (
+                <div key={stage} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                  <p className="text-xs uppercase text-white/40">{stage}</p>
+                  <p className="mt-1 text-2xl font-semibold">{data.salesLeads.filter((lead) => lead.status === stage).length}</p>
+                </div>
+              ))}
+            </div>
           <div className="mt-5 grid gap-5">
             {data.salesLeads.map((lead) => {
               const latestEmail = data.outboundEmails.find((email) => email.leadId === lead.id);
@@ -55,6 +64,7 @@ export default async function SalesExecutionPage() {
                     <p>Source: <span className="text-white">{lead.source}</span></p>
                     <p>Segment: <span className="text-white">{lead.segment || 'Not set'}</span></p>
                   </div>
+                  <LeadStageControl lead={lead} />
                   <p className="mt-4 rounded-lg border border-white/10 bg-black/25 p-3 text-sm text-white/60">{lead.painPoint}</p>
                   {latestEmail && (
                     <div className="mt-4 rounded-lg border border-cyan-300/15 bg-cyan-400/10 p-4">
@@ -96,7 +106,13 @@ export default async function SalesExecutionPage() {
             <Card>
               <h3 className="text-lg font-semibold">Tasks and notes</h3>
               <div className="mt-4 space-y-3 text-sm text-white/60">
-                {data.crmActivities.slice(0, 8).map((activity) => <p key={activity.id}><span className="text-white">{activity.type}: {activity.title}</span> - {activity.status}</p>)}
+                {data.crmActivities.slice(0, 8).map((activity) => (
+                  <div key={activity.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                    <p><span className="text-white">{activity.type}: {activity.title}</span> - {activity.status}</p>
+                    {activity.body && <p className="mt-1 text-white/45">{String(activity.body).slice(0, 140)}</p>}
+                    <ActivityActions activity={{ id: activity.id, type: activity.type, title: activity.title, status: activity.status, body: activity.body }} />
+                  </div>
+                ))}
                 {!data.crmActivities.length && <p>No activities yet.</p>}
               </div>
             </Card>

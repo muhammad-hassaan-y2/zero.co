@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {
   businessResults,
+  crmActivities,
   db,
   decisionLedger,
   outboundEmails,
@@ -78,6 +79,21 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       result: `Amazon SES accepted message ${providerMessageId}.`,
       approvedBy: ctx.user.email,
       databaseReference: `ses:${providerMessageId}`,
+    });
+
+    await db.insert(crmActivities).values({
+      id: nanoid(),
+      workspaceId: ctx.workspace.id,
+      leadId: lead.id,
+      customerId: null,
+      accountId: null,
+      contactId: null,
+      ownerAgentId: email.agentId,
+      type: 'task',
+      title: `Follow up with ${lead.companyName}`,
+      body: `Sales email sent through SES. Follow up if there is no reply.`,
+      status: 'open',
+      dueAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
     });
 
     await storeAgentMemory({
