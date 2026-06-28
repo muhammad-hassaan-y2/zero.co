@@ -53,6 +53,18 @@ type ProblemToFteDesign = {
   };
 };
 
+type SoftwareFactorySpec = {
+  product: { name: string; category: string; userProblem: string; targetUsers: string; successMetric: string };
+  frontend: { pages: { name: string; purpose: string; keyComponents: string[]; dynamicData: string[] }[]; userFlows: string[]; designSystem: string[]; accessibility: string[] };
+  backend: { apiRoutes: { method: string; path: string; purpose: string; auth: string; dataTouched: string[] }[]; dataModels: { name: string; fields: string[]; relationships: string[] }[]; jobsAndEvents: string[] };
+  agents: { name: string; role: string; goal: string; tools: string[]; workflows: string[]; approvalGates: string[]; successMetric: string }[];
+  automations: { name: string; trigger: string; steps: string[]; connectors: string[]; humanApproval: string; resultRecord: string }[];
+  connectors: { name: string; purpose: string; authNeeded: string; readActions: string[]; writeActions: string[]; risk: string }[];
+  awsArchitecture: { services: { service: string; purpose: string; securityControl: string }[]; eventFlow: string[]; observability: string[]; deployment: string[] };
+  implementationPlan: { mvpMilestones: string[]; testPlan: string[]; envVars: string[]; downloadableArtifacts: string[]; limitationsUntilConnected: string[] };
+  objectiveEvaluation: string[];
+};
+
 function splitList(value: string) {
   return value.split('\n').map((item) => item.trim()).filter(Boolean);
 }
@@ -241,6 +253,122 @@ export function ProblemToFteBuilder() {
               Created {promoted.agent?.name || 'Digital FTE'} with {promoted.workflows?.length || 0} workflows, {promoted.policies?.length || 0} policies, and {promoted.sops?.length || 0} SOPs.
             </p>
           )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function SoftwareFactoryBuilder() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [spec, setSpec] = useState<SoftwareFactorySpec | null>(null);
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const response = await fetch('/api/software-factory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        request: fd.get('request'),
+        targetUsers: fd.get('targetUsers'),
+        requiredCapabilities: splitList(String(fd.get('requiredCapabilities') || '')),
+        preferredStack: splitList(String(fd.get('preferredStack') || '')),
+        integrations: splitList(String(fd.get('integrations') || '')),
+        riskControls: fd.get('riskControls'),
+      }),
+    });
+
+    setLoading(false);
+    if (!response.ok) {
+      setError(await readError(response, 'Software factory spec failed.'));
+      return;
+    }
+
+    const payload = await response.json();
+    setSpec(payload.spec);
+  }
+
+  function downloadSpec() {
+    if (!spec) return;
+    const blob = new Blob([JSON.stringify(spec, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${spec.product.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-software-factory.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <section className="rounded-lg border border-emerald-300/15 bg-emerald-400/[.055] p-5">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <div>
+          <h2 className="text-xl font-semibold">Software + automation factory</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/60">
+            Generate a dynamic build spec for a frontend, backend, website, email automation, sales generator, finance agent, or custom AI workflow.
+          </p>
+        </div>
+        <span className="rounded-md border border-emerald-300/20 bg-black/25 px-3 py-1 text-xs text-emerald-100">Spec + agents + connectors</span>
+      </div>
+
+      <form onSubmit={submit} className="mt-5 grid gap-3 md:grid-cols-2">
+        <textarea name="request" required placeholder="Describe the software, automation, website, agent, or backend to generate." className="min-h-28 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2" />
+        <Input name="targetUsers" placeholder="Who will use this?" wide />
+        <textarea name="requiredCapabilities" placeholder="Required capabilities, one per line" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <textarea name="preferredStack" placeholder="Preferred stack/tools, one per line" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <textarea name="integrations" placeholder="Connectors/integrations, one per line" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <textarea name="riskControls" required placeholder="Approval gates, blocked actions, compliance limits, and external write controls" className="min-h-24 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <div className="md:col-span-2">
+          <button disabled={loading} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-60">{loading ? 'Generating spec...' : 'Generate software factory spec'}</button>
+        </div>
+      </form>
+
+      {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+
+      {spec && (
+        <div className="mt-6 space-y-5">
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Panel title={spec.product.name}>
+              <p className="text-sm text-cyan-100">{spec.product.category.replaceAll('_', ' ')}</p>
+              <p className="mt-2 text-sm text-white/60">{spec.product.userProblem}</p>
+              <p className="mt-3 text-xs text-white/40">Success: {spec.product.successMetric}</p>
+            </Panel>
+            <Panel title="Frontend">
+              <MiniList title="Pages" items={spec.frontend.pages.map((page) => page.name)} />
+              <MiniList title="User flows" items={spec.frontend.userFlows} />
+            </Panel>
+            <Panel title="Backend">
+              <MiniList title="API routes" items={spec.backend.apiRoutes.map((route) => `${route.method} ${route.path}`)} />
+              <MiniList title="Data models" items={spec.backend.dataModels.map((model) => model.name)} />
+            </Panel>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Panel title="Agents and automations">
+              <MiniList title="Agents" items={spec.agents.map((agent) => `${agent.name}: ${agent.goal}`)} />
+              <MiniList title="Automations" items={spec.automations.map((automation) => `${automation.name}: ${automation.trigger}`)} />
+            </Panel>
+            <Panel title="Connectors and AWS">
+              <MiniList title="Connectors" items={spec.connectors.map((connector) => `${connector.name} (${connector.risk})`)} />
+              <MiniList title="AWS services" items={spec.awsArchitecture.services.map((service) => service.service)} />
+            </Panel>
+          </div>
+
+          <Panel title="Implementation and objective evaluation">
+            <div className="grid gap-4 md:grid-cols-2">
+              <MiniList title="MVP milestones" items={spec.implementationPlan.mvpMilestones} />
+              <MiniList title="Test plan" items={spec.implementationPlan.testPlan} />
+              <MiniList title="Env vars" items={spec.implementationPlan.envVars} />
+              <MiniList title="Limitations until connected" items={spec.implementationPlan.limitationsUntilConnected} />
+            </div>
+          </Panel>
+
+          <button onClick={downloadSpec} className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/80 hover:bg-white/5">Download software factory JSON</button>
         </div>
       )}
     </section>

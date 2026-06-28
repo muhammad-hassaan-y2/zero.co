@@ -1071,3 +1071,142 @@ export async function generateLiveAgentReply(input: {
   if (!text) throw new Error('Amazon Bedrock returned an empty live response.');
   return text.trim();
 }
+
+export async function designSoftwareFactoryWithBedrock(input: {
+  workspaceName: string;
+  businessType?: string | null;
+  customers?: string | null;
+  request: string;
+  targetUsers: string;
+  requiredCapabilities: string[];
+  preferredStack: string[];
+  integrations: string[];
+  riskControls: string;
+}) {
+  const prompt = `You are ZeroCo's software and automation factory architect. Generate a dynamic, user-specific build specification for a requested AI-native software system. It may be a website, frontend app, backend API, email automation, sales generator, finance agent, custom agent, internal tool, or multi-agent company workflow.
+
+Return ONLY valid JSON:
+{
+  "product": {"name": "", "category": "website|web_app|backend_api|automation|agent_os|sales_system|finance_system|custom", "userProblem": "", "targetUsers": "", "successMetric": ""},
+  "frontend": {"pages": [{"name": "", "purpose": "", "keyComponents": [], "dynamicData": []}], "userFlows": [], "designSystem": [], "accessibility": []},
+  "backend": {"apiRoutes": [{"method": "GET|POST|PUT|PATCH|DELETE", "path": "", "purpose": "", "auth": "", "dataTouched": []}], "dataModels": [{"name": "", "fields": [], "relationships": []}], "jobsAndEvents": []},
+  "agents": [{"name": "", "role": "", "goal": "", "tools": [], "workflows": [], "approvalGates": [], "successMetric": ""}],
+  "automations": [{"name": "", "trigger": "", "steps": [], "connectors": [], "humanApproval": "", "resultRecord": ""}],
+  "connectors": [{"name": "", "purpose": "", "authNeeded": "", "readActions": [], "writeActions": [], "risk": "low|medium|high|critical"}],
+  "awsArchitecture": {"services": [{"service": "", "purpose": "", "securityControl": ""}], "eventFlow": [], "observability": [], "deployment": []},
+  "implementationPlan": {"mvpMilestones": [], "testPlan": [], "envVars": [], "downloadableArtifacts": [], "limitationsUntilConnected": []},
+  "objectiveEvaluation": []
+}
+
+Rules:
+- Be specific to the request and workspace. Do not return a generic SaaS template.
+- If the user asks for email/sales generation, include outreach sequence generation, approval gates, unsubscribe/compliance policy, CRM logging, and performance metrics.
+- If the user asks for finance, include invoice/payment/spend controls, approval thresholds, audit trail, and policy blocks.
+- If the user asks for frontend/backend, include concrete pages, routes, database models, auth, runtime jobs, and deployment targets.
+- Mark anything requiring external APIs as a connector with exact read/write actions.
+- Include AWS services where useful: Amazon Bedrock, API Gateway, Lambda, Step Functions, EventBridge, SQS, SES, Aurora PostgreSQL, S3, Cognito, IAM, Secrets Manager, CloudWatch, X-Ray.
+
+Workspace: ${input.workspaceName}
+Business: ${input.businessType || ''}
+Customers: ${input.customers || ''}
+Request: ${input.request}
+Target users: ${input.targetUsers}
+Capabilities: ${input.requiredCapabilities.join(', ')}
+Preferred stack/tools: ${input.preferredStack.join(', ')}
+Integrations/connectors: ${input.integrations.join(', ')}
+Risk controls: ${input.riskControls}`;
+
+  const parsed = await runBedrockJson(prompt, 5200);
+  const product = requireObject(parsed.product, 'software product');
+  const frontend = requireObject(parsed.frontend, 'frontend plan');
+  const backend = requireObject(parsed.backend, 'backend plan');
+  const architecture = requireObject(parsed.awsArchitecture, 'AWS architecture');
+  const implementationPlan = requireObject(parsed.implementationPlan, 'implementation plan');
+  requireText(product.name, 'product name');
+  requireText(product.userProblem, 'product problem');
+  requireItems(parsed.agents, 'software factory agents', 1);
+  requireItems(parsed.automations, 'software factory automations', 1);
+
+  const risk = ['low', 'medium', 'high', 'critical'] as const;
+  const method = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
+  const category = ['website', 'web_app', 'backend_api', 'automation', 'agent_os', 'sales_system', 'finance_system', 'custom'] as const;
+
+  return {
+    product: {
+      name: asString(product.name, 'Generated software system', 160),
+      category: enumValue(product.category, category, 'custom'),
+      userProblem: asString(product.userProblem, input.request),
+      targetUsers: asString(product.targetUsers, input.targetUsers),
+      successMetric: asString(product.successMetric, 'User can complete the requested workflow end to end.'),
+    },
+    frontend: {
+      pages: (Array.isArray(frontend.pages) ? frontend.pages : []).slice(0, 10).map((page: AnyRecord) => ({
+        name: asString(page.name, 'Page', 120),
+        purpose: asString(page.purpose, 'Support the requested user flow.'),
+        keyComponents: asStringArray(page.keyComponents, [], 10),
+        dynamicData: asStringArray(page.dynamicData, [], 10),
+      })),
+      userFlows: asStringArray(frontend.userFlows, [], 12),
+      designSystem: asStringArray(frontend.designSystem, [], 10),
+      accessibility: asStringArray(frontend.accessibility, [], 10),
+    },
+    backend: {
+      apiRoutes: (Array.isArray(backend.apiRoutes) ? backend.apiRoutes : []).slice(0, 14).map((route: AnyRecord) => ({
+        method: enumValue(route.method, method, 'POST'),
+        path: asString(route.path, '/api/generated', 160),
+        purpose: asString(route.purpose, 'Support the requested workflow.'),
+        auth: asString(route.auth, 'Authenticated workspace user'),
+        dataTouched: asStringArray(route.dataTouched, [], 10),
+      })),
+      dataModels: (Array.isArray(backend.dataModels) ? backend.dataModels : []).slice(0, 10).map((model: AnyRecord) => ({
+        name: asString(model.name, 'GeneratedModel', 120),
+        fields: asStringArray(model.fields, [], 16),
+        relationships: asStringArray(model.relationships, [], 10),
+      })),
+      jobsAndEvents: asStringArray(backend.jobsAndEvents, [], 12),
+    },
+    agents: ((Array.isArray(parsed.agents) ? parsed.agents : []) as AnyRecord[]).slice(0, 10).map((agent) => ({
+      name: asString(agent.name, 'Software Factory Agent', 120),
+      role: asString(agent.role, 'Own a generated software or automation capability.'),
+      goal: asString(agent.goal, input.request),
+      tools: asStringArray(agent.tools, input.preferredStack, 12),
+      workflows: asStringArray(agent.workflows, [], 10),
+      approvalGates: asStringArray(agent.approvalGates, [input.riskControls], 10),
+      successMetric: asString(agent.successMetric, 'Requested capability works with evidence.'),
+    })),
+    automations: ((Array.isArray(parsed.automations) ? parsed.automations : []) as AnyRecord[]).slice(0, 10).map((automation) => ({
+      name: asString(automation.name, 'Generated automation', 140),
+      trigger: asString(automation.trigger, 'User or business event'),
+      steps: asStringArray(automation.steps, [], 12),
+      connectors: asStringArray(automation.connectors, input.integrations, 12),
+      humanApproval: asString(automation.humanApproval, input.riskControls),
+      resultRecord: asString(automation.resultRecord, 'Store result and proof in workspace evidence.'),
+    })),
+    connectors: ((Array.isArray(parsed.connectors) ? parsed.connectors : []) as AnyRecord[]).slice(0, 12).map((connector) => ({
+      name: asString(connector.name, 'External connector', 120),
+      purpose: asString(connector.purpose, 'Connect generated software to external system.'),
+      authNeeded: asString(connector.authNeeded, 'API key or OAuth'),
+      readActions: asStringArray(connector.readActions, [], 10),
+      writeActions: asStringArray(connector.writeActions, [], 10),
+      risk: enumValue(connector.risk, risk, 'medium'),
+    })),
+    awsArchitecture: {
+      services: (Array.isArray(architecture.services) ? architecture.services : []).slice(0, 12).map((service: AnyRecord) => ({
+        service: asString(service.service, 'Amazon Bedrock', 120),
+        purpose: asString(service.purpose, 'Support generated software capability.'),
+        securityControl: asString(service.securityControl, 'IAM least privilege and encrypted transport.'),
+      })),
+      eventFlow: asStringArray(architecture.eventFlow, [], 12),
+      observability: asStringArray(architecture.observability, [], 10),
+      deployment: asStringArray(architecture.deployment, [], 10),
+    },
+    implementationPlan: {
+      mvpMilestones: asStringArray(implementationPlan.mvpMilestones, [], 12),
+      testPlan: asStringArray(implementationPlan.testPlan, [], 12),
+      envVars: asStringArray(implementationPlan.envVars, [], 20),
+      downloadableArtifacts: asStringArray(implementationPlan.downloadableArtifacts, [], 12),
+      limitationsUntilConnected: asStringArray(implementationPlan.limitationsUntilConnected, [], 12),
+    },
+    objectiveEvaluation: asStringArray(parsed.objectiveEvaluation, [], 12),
+  };
+}

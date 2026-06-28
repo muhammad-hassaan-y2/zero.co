@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AddAutomationForm, ProblemToFteBuilder } from '@/components/builder-forms';
+import { AddAutomationForm, ProblemToFteBuilder, SoftwareFactoryBuilder } from '@/components/builder-forms';
 import { BuildSalesAgentButton } from '@/components/action-buttons';
 import { Card } from '@/components/status';
 import { getWorkspaceData } from '@/lib/data';
@@ -25,6 +25,10 @@ export default async function CompanyBuilderPage() {
 
       <div className="mt-8">
         <ProblemToFteBuilder />
+      </div>
+
+      <div className="mt-8">
+        <SoftwareFactoryBuilder />
       </div>
 
       <Card className="mt-8 border-emerald-300/15 bg-emerald-400/[.06]">

@@ -24,12 +24,18 @@ ZeroCo now has three LLM-driven generation paths:
    - Chat/voice can create agents, workflows, policies, SOPs, events, and ledger records directly in the workspace.
    - The structured core engine creates AWS architecture, a supervised Mode 1 test plan, and a Mode 2 Digital FTE package that can be promoted into runnable dashboard artifacts.
 
+4. **Software and automation factory**
+   - User describes a website, frontend app, backend API, email automation, sales generator, finance workflow, or custom AI automation.
+   - Amazon Bedrock generates a build specification with frontend pages, backend API routes, data models, agents, automations, connectors, AWS architecture, implementation milestones, test plan, environment variables, and limitations until real connectors are attached.
+   - The app stores a workspace event and decision ledger record for the generated spec and lets the user download the JSON package.
+
 This means the core hackathon flow is not static copy. The LLM creates the company operating content and automation content from the user's inputs, and the dashboard displays database-backed results.
 
 ## Dashboard Functionality
 
 - **Command Center**: shows metrics from live workspace data.
 - **AI Company Builder**: one place for chat, live voice, structured Problem-to-FTE diagnosis, automation packages, and Digital FTE creation.
+- **Software + Automation Factory**: generates dynamic product/backend/frontend/agent/connector specs for websites, apps, email automations, sales generators, finance agents, and custom workflows.
 - **Sales Agent Builder**: creates a complete LLM-designed sales engine with ICP research, lead sourcing, qualification, outreach, follow-up, demo booking, CRM hygiene, policies, SOPs, and testable workflows.
 - **Company Blueprint**: shows the generated company model.
 - **Digital FTEs**: lists agents and supports pause/throttle actions with audit entries.
@@ -97,6 +103,32 @@ This means the core hackathon flow is not static copy. The LLM creates the compa
 13. Click **Download OS**.
 
     Expected result: the browser downloads a JSON package containing the generated company operating system, runtime evidence, and integration runbook.
+
+## What The System Can Do Now
+
+- Generate an AI-native company OS from user inputs.
+- Generate departments, Digital FTEs, workflows, policies, SOPs, and governance records.
+- Chat or talk with the AI Company Builder to create workspace artifacts.
+- Convert a real business problem into AWS architecture, Mode 1 test plan, and Mode 2 Digital FTE package.
+- Generate software/application specs for frontend, backend, data models, agents, connectors, and AWS deployment.
+- Generate sales-agent operating systems and sales workflows.
+- Generate email/sales/finance/custom automation specifications with approval gates.
+- Run generated internal workflows and create runtime evidence.
+- Approve/reject decisions in the governance ledger.
+- Generate operating reports from workflow evidence.
+- Export the full OS and generated evidence as JSON.
+
+## What Must Be Added For Production-Grade External Execution
+
+- **Email connector**: Amazon SES, Gmail, or Microsoft Graph for real sending, reply tracking, unsubscribe handling, and approval-before-send.
+- **CRM connector**: HubSpot, Salesforce, or Pipedrive for leads, pipeline stages, notes, and activity logging.
+- **Commerce connector**: Shopify API for orders, customers, refunds, fulfillment, and support context.
+- **Payments connector**: Stripe API for invoices, subscriptions, refunds, disputes, and finance controls.
+- **Deployment connector**: Vercel/GitHub integration for generated frontend/backend code deployment.
+- **Code generation workspace**: persistent project files, preview builds, code diff review, tests, and deploy approvals.
+- **Secrets vault**: per-workspace connector credentials stored through AWS Secrets Manager or equivalent.
+- **Scheduler/queue**: EventBridge, SQS, and Step Functions for recurring automations and reliable retries.
+- **Connector audit layer**: every external read/write action must create evidence, policy match, and ledger record.
 
 ## Configuration
 
