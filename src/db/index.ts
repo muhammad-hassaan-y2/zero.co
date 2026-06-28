@@ -18,7 +18,7 @@ CREATE TYPE decision_status AS ENUM ('pending', 'approved', 'rejected', 'blocked
 CREATE TYPE event_severity AS ENUM ('info', 'warning', 'high', 'critical');
 CREATE TYPE workflow_run_status AS ENUM ('queued', 'running', 'waiting_approval', 'completed', 'failed');
 CREATE TYPE result_status AS ENUM ('projected', 'verified', 'blocked');
-CREATE TYPE lead_status AS ENUM ('new', 'qualified', 'contacted', 'replied', 'disqualified');
+CREATE TYPE lead_status AS ENUM ('new', 'qualified', 'contacted', 'replied', 'negotiating', 'closed_won', 'closed_lost', 'disqualified');
 CREATE TYPE outbound_email_status AS ENUM ('draft', 'pending_approval', 'sent', 'failed', 'blocked');
 CREATE TYPE customer_query_status AS ENUM ('new', 'triaged', 'pending_approval', 'replied', 'closed', 'blocked');
 
@@ -249,6 +249,33 @@ CREATE TABLE customer_replies (
   provider_message_id text,
   failure_reason text,
   sent_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE customers (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  lead_id text REFERENCES sales_leads(id) ON DELETE SET NULL,
+  name text NOT NULL,
+  company_name text NOT NULL,
+  email text NOT NULL,
+  source text NOT NULL DEFAULT 'sales',
+  status text NOT NULL DEFAULT 'active',
+  notes text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE sales_deals (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  lead_id text REFERENCES sales_leads(id) ON DELETE SET NULL,
+  customer_id text REFERENCES customers(id) ON DELETE SET NULL,
+  owner_agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  stage text NOT NULL DEFAULT 'closed_won',
+  value numeric(12,2) NOT NULL DEFAULT 0,
+  currency text NOT NULL DEFAULT 'USD',
+  close_reason text NOT NULL,
+  next_step text NOT NULL DEFAULT 'Onboard customer',
   created_at timestamptz NOT NULL DEFAULT now()
 );
 

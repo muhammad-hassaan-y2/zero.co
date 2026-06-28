@@ -1,4 +1,4 @@
-import { AddCustomerQueryForm, AddLeadForm, CustomerReplyActions, SalesEmailActions } from '@/components/sales-execution';
+import { AddCustomerQueryForm, AddLeadForm, CloseLeadAction, CustomerReplyActions, LeadDiscoveryForm, SalesEmailActions } from '@/components/sales-execution';
 import { Badge, Card, Metric } from '@/components/status';
 import { getWorkspaceData } from '@/lib/data';
 
@@ -6,9 +6,7 @@ export default async function SalesExecutionPage() {
   const data = await getWorkspaceData();
   const salesAgents = data.agents.filter((agent) => `${agent.name} ${agent.role}`.toLowerCase().includes('sales'));
   const supportAgents = data.agents.filter((agent) => `${agent.name} ${agent.role}`.toLowerCase().includes('support'));
-  const sent = data.outboundEmails.filter((email) => email.status === 'sent');
   const pending = data.outboundEmails.filter((email) => email.status === 'pending_approval');
-  const repliesSent = data.customerReplies.filter((reply) => reply.status === 'sent');
   const queryPending = data.customerReplies.filter((reply) => reply.status === 'pending_approval');
 
   return (
@@ -20,12 +18,13 @@ export default async function SalesExecutionPage() {
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Metric label="Leads" value={data.salesLeads.length} />
-        <Metric label="Customer queries" value={data.customerQueries.length} />
+        <Metric label="Customers" value={data.customers.length} />
+        <Metric label="Closed deals" value={data.salesDeals.filter((deal) => deal.stage === 'closed_won').length} />
         <Metric label="Pending drafts" value={pending.length + queryPending.length} />
-        <Metric label="Emails sent" value={sent.length + repliesSent.length} />
       </div>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+      <div className="mt-8 grid gap-6 xl:grid-cols-3">
+        <LeadDiscoveryForm agents={(salesAgents.length ? salesAgents : data.agents).map((agent) => ({ id: agent.id, name: agent.name }))} />
         <AddLeadForm agents={(salesAgents.length ? salesAgents : data.agents).map((agent) => ({ id: agent.id, name: agent.name }))} />
         <AddCustomerQueryForm agents={(supportAgents.length ? supportAgents : data.agents).map((agent) => ({ id: agent.id, name: agent.name }))} />
       </div>
@@ -62,6 +61,7 @@ export default async function SalesExecutionPage() {
                     </div>
                   )}
                   <SalesEmailActions lead={lead} email={latestEmail} />
+                  <CloseLeadAction lead={lead} />
                 </Card>
               );
             })}

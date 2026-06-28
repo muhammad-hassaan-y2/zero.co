@@ -69,7 +69,7 @@ export const decisionStatus = pgEnum('decision_status', ['pending', 'approved', 
 export const eventSeverity = pgEnum('event_severity', ['info', 'warning', 'high', 'critical']);
 export const workflowRunStatus = pgEnum('workflow_run_status', ['queued', 'running', 'waiting_approval', 'completed', 'failed']);
 export const resultStatus = pgEnum('result_status', ['projected', 'verified', 'blocked']);
-export const leadStatus = pgEnum('lead_status', ['new', 'qualified', 'contacted', 'replied', 'disqualified']);
+export const leadStatus = pgEnum('lead_status', ['new', 'qualified', 'contacted', 'replied', 'negotiating', 'closed_won', 'closed_lost', 'disqualified']);
 export const outboundEmailStatus = pgEnum('outbound_email_status', ['draft', 'pending_approval', 'sent', 'failed', 'blocked']);
 export const customerQueryStatus = pgEnum('customer_query_status', ['new', 'triaged', 'pending_approval', 'replied', 'closed', 'blocked']);
 
@@ -258,6 +258,33 @@ export const customerReplies = pgTable('customer_replies', {
   createdAt,
 });
 
+export const customers = pgTable('customers', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  leadId: text('lead_id').references(() => salesLeads.id, { onDelete: 'set null' }),
+  name: text('name').notNull(),
+  companyName: text('company_name').notNull(),
+  email: text('email').notNull(),
+  source: text('source').notNull().default('sales'),
+  status: text('status').notNull().default('active'),
+  notes: text('notes').notNull().default(''),
+  createdAt,
+});
+
+export const salesDeals = pgTable('sales_deals', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  leadId: text('lead_id').references(() => salesLeads.id, { onDelete: 'set null' }),
+  customerId: text('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  ownerAgentId: text('owner_agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  stage: text('stage').notNull().default('closed_won'),
+  value: numeric('value', { precision: 12, scale: 2 }).notNull().default('0'),
+  currency: text('currency').notNull().default('USD'),
+  closeReason: text('close_reason').notNull(),
+  nextStep: text('next_step').notNull().default('Onboard customer'),
+  createdAt,
+});
+
 export const policies = pgTable('policies', {
   id: text('id').primaryKey(),
   workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
@@ -352,6 +379,8 @@ export const workspaceRelations = relations(workspaces, ({ one, many }) => ({
   businessResults: many(businessResults),
   salesLeads: many(salesLeads),
   customerQueries: many(customerQueries),
+  customers: many(customers),
+  salesDeals: many(salesDeals),
 }));
 
 export const departmentRelations = relations(departments, ({ one, many }) => ({

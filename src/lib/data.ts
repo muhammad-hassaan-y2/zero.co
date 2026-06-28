@@ -46,6 +46,7 @@ type WorkspaceDataRecord = Record<string, WorkspaceDataValue> & {
   email: string;
   customerName: string;
   customerEmail: string;
+  customerId?: string | null;
   website?: string | null;
   segment?: string | null;
   painPoint: string;
@@ -60,6 +61,9 @@ type WorkspaceDataRecord = Record<string, WorkspaceDataValue> & {
   approvalReason: string;
   providerMessageId?: string | null;
   failureReason?: string | null;
+  closeReason: string;
+  nextStep: string;
+  currency: string;
   stepName: string;
   toolUsed?: string | null;
   status: string;
@@ -115,7 +119,7 @@ async function workspaceRows(table: string, workspaceId: string, orderBy = 'crea
 
 export async function getWorkspaceData() {
   const { user, workspace } = await requireWorkspace();
-  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows, leadRows, emailRows, queryRows, replyRows] = await Promise.all([
+  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows, leadRows, emailRows, queryRows, replyRows, customerRows, dealRows] = await Promise.all([
     workspaceRows('departments', workspace.id, 'created_at asc'),
     workspaceRows('digital_ftes', workspace.id, 'created_at asc'),
     workspaceRows('workflows', workspace.id, 'created_at asc'),
@@ -132,6 +136,8 @@ export async function getWorkspaceData() {
     workspaceRows('outbound_emails', workspace.id),
     workspaceRows('customer_queries', workspace.id),
     workspaceRows('customer_replies', workspace.id),
+    workspaceRows('customers', workspace.id),
+    workspaceRows('sales_deals', workspace.id),
   ]);
 
   const spendToday = agentRows.reduce((sum, agent) => sum + Number(agent.costToday || 0), 0);
@@ -169,6 +175,8 @@ export async function getWorkspaceData() {
     outboundEmails: emailRows,
     customerQueries: queryRows,
     customerReplies: replyRows,
+    customers: customerRows,
+    salesDeals: dealRows,
     metrics: {
       digitalFtesActive: agentRows.filter((agent) => !['paused', 'blocked'].includes(agent.status)).length,
       tasksCompletedToday,
@@ -184,6 +192,8 @@ export async function getWorkspaceData() {
       emailsSent: emailRows.filter((email) => email.status === 'sent').length,
       customerQueries: queryRows.length,
       customerRepliesSent: replyRows.filter((reply) => reply.status === 'sent').length,
+      customers: customerRows.length,
+      closedDeals: dealRows.filter((deal) => deal.stage === 'closed_won').length,
     },
   };
 }
