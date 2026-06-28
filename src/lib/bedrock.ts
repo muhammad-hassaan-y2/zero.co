@@ -1266,3 +1266,61 @@ Policies: ${JSON.stringify(input.policies.map((policy) => ({ name: policy.name, 
     followUpPlan: asStringArray(parsed.followUpPlan, ['Wait 3 business days before follow-up', 'Stop if recipient opts out'], 8),
   };
 }
+
+export async function draftCustomerReplyWithBedrock(input: {
+  workspaceName: string;
+  businessType?: string | null;
+  customers?: string | null;
+  query: {
+    customerName: string;
+    customerEmail: string;
+    companyName?: string | null;
+    subject: string;
+    message: string;
+    source: string;
+  };
+  agents: AnyRecord[];
+  policies: AnyRecord[];
+}) {
+  const prompt = `You are ZeroCo's customer query agent. Triage the inbound customer message and draft a safe reply. Do not promise refunds, legal outcomes, financial credits, or production changes unless the message clearly says a human approved it. If the message asks for refund, deletion, legal, finance, production, or account-risk action, require human approval.
+
+Return ONLY valid JSON:
+{
+  "intent": "",
+  "priority": "low|medium|high|critical",
+  "subject": "",
+  "body": "",
+  "approvalRequired": true,
+  "approvalReason": "",
+  "policyChecks": [],
+  "nextActions": [],
+  "resultRecord": ""
+}
+
+Workspace: ${input.workspaceName}
+Business: ${input.businessType || ''}
+Customers: ${input.customers || ''}
+Customer: ${input.query.customerName} <${input.query.customerEmail}>
+Company: ${input.query.companyName || ''}
+Inbound subject: ${input.query.subject}
+Inbound source: ${input.query.source}
+Inbound message: ${input.query.message}
+Available agents: ${JSON.stringify(input.agents.map((agent) => ({ name: agent.name, role: agent.role, goal: agent.goal })).slice(0, 8))}
+Policies: ${JSON.stringify(input.policies.map((policy) => ({ name: policy.name, condition: policy.condition, action: policy.action, mode: policy.mode })).slice(0, 12))}`;
+
+  const parsed = await runBedrockJson(prompt, 1800);
+  const risk = ['low', 'medium', 'high', 'critical'] as const;
+  const approvalRequired = typeof parsed.approvalRequired === 'boolean' ? parsed.approvalRequired : true;
+
+  return {
+    intent: asString(parsed.intent, 'general', 120),
+    priority: enumValue(parsed.priority, risk, 'medium'),
+    subject: asString(parsed.subject, `Re: ${input.query.subject}`, 180),
+    body: asString(parsed.body, `Hi ${input.query.customerName},\n\nThanks for reaching out. I reviewed your message and will help route this properly.\n\nBest,`, 2200),
+    approvalRequired,
+    approvalReason: asString(parsed.approvalReason, approvalRequired ? 'Human approval required before customer-facing reply.' : 'Low-risk informational reply.', 700),
+    policyChecks: asStringArray(parsed.policyChecks, ['No refund/legal/financial commitment without approval', 'Do not expose private data'], 10),
+    nextActions: asStringArray(parsed.nextActions, ['Log the query', 'Send or approve reply', 'Update customer status'], 8),
+    resultRecord: asString(parsed.resultRecord, 'Customer query triaged and reply prepared.', 500),
+  };
+}

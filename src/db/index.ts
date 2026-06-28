@@ -20,6 +20,7 @@ CREATE TYPE workflow_run_status AS ENUM ('queued', 'running', 'waiting_approval'
 CREATE TYPE result_status AS ENUM ('projected', 'verified', 'blocked');
 CREATE TYPE lead_status AS ENUM ('new', 'qualified', 'contacted', 'replied', 'disqualified');
 CREATE TYPE outbound_email_status AS ENUM ('draft', 'pending_approval', 'sent', 'failed', 'blocked');
+CREATE TYPE customer_query_status AS ENUM ('new', 'triaged', 'pending_approval', 'replied', 'closed', 'blocked');
 
 CREATE TABLE "user" (
   id text PRIMARY KEY,
@@ -207,6 +208,38 @@ CREATE TABLE outbound_emails (
   id text PRIMARY KEY,
   workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
   lead_id text NOT NULL REFERENCES sales_leads(id) ON DELETE CASCADE,
+  agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  to_email text NOT NULL,
+  subject text NOT NULL,
+  body text NOT NULL,
+  status outbound_email_status NOT NULL DEFAULT 'pending_approval',
+  approval_reason text NOT NULL,
+  provider_message_id text,
+  failure_reason text,
+  sent_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE customer_queries (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  owner_agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  customer_name text NOT NULL,
+  customer_email text NOT NULL,
+  company_name text,
+  subject text NOT NULL,
+  message text NOT NULL,
+  intent text NOT NULL DEFAULT 'general',
+  priority risk_level NOT NULL DEFAULT 'medium',
+  status customer_query_status NOT NULL DEFAULT 'new',
+  source text NOT NULL DEFAULT 'manual',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE customer_replies (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  query_id text NOT NULL REFERENCES customer_queries(id) ON DELETE CASCADE,
   agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
   to_email text NOT NULL,
   subject text NOT NULL,
