@@ -6,16 +6,10 @@ import {
   BarChart3,
   Bot,
   BrainCircuit,
-  Building2,
   ClipboardCheck,
   FileJson,
-  FileText,
   GitBranch,
   LayoutDashboard,
-  Mic2,
-  Network,
-  PlayCircle,
-  ScrollText,
   Settings,
   ShieldCheck,
   Users,
@@ -27,26 +21,20 @@ const groups = [
     items: [
       { label: 'Command Center', href: '/dashboard', icon: LayoutDashboard },
       { label: 'AI Company Builder', href: '/dashboard/company-builder', icon: BrainCircuit },
-      { label: 'Blueprint', href: '/dashboard/blueprint', icon: Network },
     ],
   },
   {
     title: 'Operate',
     items: [
-      { label: 'Digital FTEs', href: '/dashboard/digital-ftes', icon: Bot },
-      { label: 'Departments', href: '/dashboard/departments', icon: Building2 },
+      { label: 'Workforce', href: '/dashboard/workforce', icon: Bot },
       { label: 'Workflows', href: '/dashboard/workflows', icon: GitBranch },
-      { label: 'Runtime Tests', href: '/dashboard/simulation', icon: PlayCircle },
-      { label: 'Results', href: '/dashboard/results', icon: BarChart3 },
     ],
   },
   {
     title: 'Govern',
     items: [
-      { label: 'SOPs', href: '/dashboard/sops', icon: ClipboardCheck },
-      { label: 'Policies', href: '/dashboard/policies', icon: ShieldCheck },
-      { label: 'Decision Ledger', href: '/dashboard/decision-ledger', icon: ScrollText },
-      { label: 'Operating Reports', href: '/dashboard/board-report', icon: FileText },
+      { label: 'Governance', href: '/dashboard/governance', icon: ShieldCheck },
+      { label: 'Evaluation', href: '/dashboard/evaluation', icon: BarChart3 },
       { label: 'Workspace', href: '/dashboard/settings', icon: Settings },
     ],
   },
@@ -113,10 +101,10 @@ export function DashboardNav({ compact = false }: { compact?: boolean }) {
 
 export function DashboardFeatureMap() {
   const cards = [
-    { title: 'Chat, talk, or diagnose', text: 'One builder accepts chat, voice, and structured requirements, then creates AI-native company artifacts.', href: '/dashboard/company-builder', icon: Mic2 },
-    { title: 'Promote to Digital FTE', text: 'Problem-to-FTE engine turns user requirements into AWS architecture, Mode 1 tests, and promotable Digital FTEs.', href: '/dashboard/company-builder', icon: BrainCircuit },
-    { title: 'Run workflows', text: 'Runtime execution creates workflow runs, step evidence, business results, events, and approval records.', href: '/dashboard/workflows', icon: PlayCircle },
-    { title: 'Evaluate evidence', text: 'Results, reports, policies, and decision ledger prove what happened from stored database records.', href: '/dashboard/results', icon: FileJson },
+    { title: 'Build company OS', text: 'Chat, talk, diagnose, or use structured Problem-to-FTE creation from one AI Company Builder.', href: '/dashboard/company-builder', icon: BrainCircuit },
+    { title: 'Operate workforce', text: 'Manage departments, Digital FTEs, ownership, risk, budget, and agent controls from one workforce view.', href: '/dashboard/workforce', icon: Bot },
+    { title: 'Govern safely', text: 'Review policies, SOPs, approval queues, blocked actions, and decision ledger coverage in one place.', href: '/dashboard/governance', icon: ShieldCheck },
+    { title: 'Evaluate evidence', text: 'Run workflows, inspect step evidence and results, then generate operating reports from records.', href: '/dashboard/evaluation', icon: FileJson },
   ];
 
   return (
