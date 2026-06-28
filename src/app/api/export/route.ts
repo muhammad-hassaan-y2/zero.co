@@ -16,7 +16,7 @@ export async function GET() {
       'Open workflows and run one workflow for result.',
       'Check Results Center for workflow run evidence and business result records.',
       'Check Decision Ledger for policy matches, approvals, blocks, and DB references.',
-      'Use Company Builder to generate a new automation package from a fresh task.',
+      'Use AI Company Builder to chat, talk, diagnose, or generate a new automation package from a fresh task.',
     ],
     integrationReadiness: {
       currentMode: 'Generated workflow and evidence runtime inside ZeroCo',

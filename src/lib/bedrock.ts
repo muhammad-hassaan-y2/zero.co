@@ -1041,7 +1041,7 @@ Policies: ${JSON.stringify(input.policies.map((item) => ({ name: item.name, mode
       status: asString(item.status, 'open', 80),
     })),
     decisions: decisionItems.slice(0, 6).map((item) => ({
-      action: asString(item.action, 'Created artifacts from live builder request', 220),
+      action: asString(item.action, 'Created artifacts from AI Company Builder request', 220),
       policyMatched: asString(item.policyMatched, 'Live builder governance policy', 180),
       riskLevel: enumValue(item.riskLevel, risk, 'medium'),
       decision: enumValue(item.decision, decision, 'pending'),

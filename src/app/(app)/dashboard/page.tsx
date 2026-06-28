@@ -92,10 +92,10 @@ export default async function DashboardPage() {
         <Card>
           <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
             <div>
-              <h2 className="text-xl font-semibold">Text + Live AI Call</h2>
-              <p className="mt-1 text-sm text-white/50">Ask by text or use the talk button. Bedrock generates the answer and Polly speaks it back.</p>
+              <h2 className="text-xl font-semibold">AI Company Builder chat</h2>
+              <p className="mt-1 text-sm text-white/50">Ask by text or use the talk button. Bedrock can answer, ask follow-ups, or create workspace artifacts.</p>
             </div>
-            <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 px-3 py-2 text-sm text-cyan-100">Live operator ready</div>
+            <Link href="/dashboard/company-builder" className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 px-3 py-2 text-sm text-cyan-100">Open full builder</Link>
           </div>
           <LiveVoiceAgent />
         </Card>

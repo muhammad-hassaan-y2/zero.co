@@ -4,7 +4,7 @@ ZeroCo is a Next.js full-stack app for generating and operating an AI-native com
 
 ## What Is End To End
 
-ZeroCo now has two LLM-driven generation paths:
+ZeroCo now has three LLM-driven generation paths:
 
 1. **Company OS generation**
    - User completes onboarding with business, customers, tools, risk boundaries, desired outcomes, and selected digital FTEs.
@@ -19,13 +19,17 @@ ZeroCo now has two LLM-driven generation paths:
    - The app persists all generated artifacts together.
    - The workflow can then be run from the dashboard, producing workflow run records, step evidence, business results, runtime events, and decision ledger records.
 
+3. **Unified AI Company Builder**
+   - The same builder page supports typed chat, live voice input, and structured Problem-to-FTE diagnosis.
+   - Chat/voice can create agents, workflows, policies, SOPs, events, and ledger records directly in the workspace.
+   - The structured core engine creates AWS architecture, a supervised Mode 1 test plan, and a Mode 2 Digital FTE package that can be promoted into runnable dashboard artifacts.
+
 This means the core hackathon flow is not static copy. The LLM creates the company operating content and automation content from the user's inputs, and the dashboard displays database-backed results.
 
 ## Dashboard Functionality
 
 - **Command Center**: shows metrics from live workspace data.
-- **Live Builder Call**: lets the user talk or chat with a Bedrock-powered operator that can create agents, workflows, policies, SOPs, events, and ledger records in real time.
-- **Company Builder**: creates LLM-designed automation packages.
+- **AI Company Builder**: one place for chat, live voice, structured Problem-to-FTE diagnosis, automation packages, and Digital FTE creation.
 - **Sales Agent Builder**: creates a complete LLM-designed sales engine with ICP research, lead sourcing, qualification, outreach, follow-up, demo booking, CRM hygiene, policies, SOPs, and testable workflows.
 - **Company Blueprint**: shows the generated company model.
 - **Digital FTEs**: lists agents and supports pause/throttle actions with audit entries.
@@ -37,7 +41,7 @@ This means the core hackathon flow is not static copy. The LLM creates the compa
 - **Runtime Tests**: runs generated workflows and can create LLM-generated operating events from the current OS.
 - **Decision Ledger**: approves/rejects pending decisions and stores the result.
 - **Operating Reports**: generates reports only after workflow runtime evidence exists.
-- **Live Voice**: uses Bedrock for reply generation and Polly for speech output.
+- **Voice Output**: uses Bedrock for reply generation and Polly for speech output inside the AI Company Builder.
 - **Download OS**: exports the generated company OS, workflows, policies, evidence, results, ledger, reports, metrics, and evaluation runbook as JSON.
 
 ## Objective Evaluation Flow
@@ -70,11 +74,11 @@ This means the core hackathon flow is not static copy. The LLM creates the compa
 
    Expected result: Bedrock generates a company OS and the dashboard loads generated departments, FTEs, workflows, policies, SOPs, blueprint, and ledger records.
 
-8. Go to **Company Builder** and create a new automation.
+8. Go to **AI Company Builder** and create a new automation.
 
    Expected result: Bedrock generates a task-specific agent, workflow, policy, SOP, event, and ledger record.
 
-9. Go to **Live Builder Call** and describe an agent or workflow in chat or by microphone.
+9. In **AI Company Builder**, describe an agent or workflow in chat or by microphone.
 
    Expected result: Bedrock decides whether to ask a follow-up or create artifacts. If enough detail is provided, the app persists the generated agent, workflows, policies, SOPs, events, and ledger records.
 

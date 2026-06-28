@@ -26,8 +26,7 @@ const groups = [
     title: 'Build',
     items: [
       { label: 'Command Center', href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Live Builder Call', href: '/dashboard/live', icon: Mic2 },
-      { label: 'Company Builder', href: '/dashboard/company-builder', icon: BrainCircuit },
+      { label: 'AI Company Builder', href: '/dashboard/company-builder', icon: BrainCircuit },
       { label: 'Blueprint', href: '/dashboard/blueprint', icon: Network },
     ],
   },
@@ -114,8 +113,8 @@ export function DashboardNav({ compact = false }: { compact?: boolean }) {
 
 export function DashboardFeatureMap() {
   const cards = [
-    { title: 'Diagnose and build', text: 'Problem-to-FTE engine turns user requirements into AWS architecture, Mode 1 tests, and promotable Digital FTEs.', href: '/dashboard/company-builder', icon: BrainCircuit },
-    { title: 'Talk or chat live', text: 'Live builder captures requirements and creates agents, workflows, policies, SOPs, events, and ledger records.', href: '/dashboard/live', icon: Mic2 },
+    { title: 'Chat, talk, or diagnose', text: 'One builder accepts chat, voice, and structured requirements, then creates AI-native company artifacts.', href: '/dashboard/company-builder', icon: Mic2 },
+    { title: 'Promote to Digital FTE', text: 'Problem-to-FTE engine turns user requirements into AWS architecture, Mode 1 tests, and promotable Digital FTEs.', href: '/dashboard/company-builder', icon: BrainCircuit },
     { title: 'Run workflows', text: 'Runtime execution creates workflow runs, step evidence, business results, events, and approval records.', href: '/dashboard/workflows', icon: PlayCircle },
     { title: 'Evaluate evidence', text: 'Results, reports, policies, and decision ledger prove what happened from stored database records.', href: '/dashboard/results', icon: FileJson },
   ];

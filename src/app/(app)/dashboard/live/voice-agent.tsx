@@ -128,8 +128,8 @@ export function LiveVoiceAgent() {
       <div className="rounded-lg border border-white/10 bg-white/[.04] p-5">
         <div className="mb-5 flex flex-col justify-between gap-4 border-b border-white/10 pb-5 md:flex-row md:items-center">
           <div>
-            <h2 className="flex items-center gap-2 text-xl font-semibold"><Bot size={20} /> Live Company Builder</h2>
-            <p className="mt-1 text-sm text-white/50">Talk or chat. Describe the agent, workflow, tools, risks, and outcome. ZeroCo can create the artifacts directly in your OS.</p>
+            <h2 className="flex items-center gap-2 text-xl font-semibold"><Bot size={20} /> AI Company Builder</h2>
+            <p className="mt-1 text-sm text-white/50">Chat or talk in the same builder. Describe the agent, workflow, tools, risks, and outcome. ZeroCo can create the artifacts directly in your OS.</p>
           </div>
           <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 px-3 py-2 text-xs text-cyan-100">Bedrock + Polly</div>
         </div>
@@ -190,10 +190,10 @@ export function LiveVoiceAgent() {
       <aside className="rounded-lg border border-white/10 bg-black/25 p-5">
         <div className="flex items-center gap-3 text-cyan-200">
           <Volume2 size={20} />
-          <h2 className="font-semibold">Live AWS Stack</h2>
+          <h2 className="font-semibold">Builder AWS Stack</h2>
         </div>
         <div className="mt-5 space-y-4 text-sm text-white/60">
-          <p><span className="text-white">Input:</span> browser microphone or typed chat</p>
+          <p><span className="text-white">Input:</span> typed chat or browser microphone in one builder</p>
           <p><span className="text-white">Planner:</span> Amazon Bedrock decides whether to answer, ask follow-up, or create artifacts</p>
           <p><span className="text-white">Builder:</span> agents, workflows, policies, SOPs, events, and ledger rows are persisted</p>
           <p><span className="text-white">Voice:</span> Amazon Polly speaks the operator reply</p>

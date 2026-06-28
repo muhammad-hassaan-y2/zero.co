@@ -23,7 +23,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               <p className="mt-1 text-xs text-white/40">Signed in as {user.email}</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/dashboard/company-builder" className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/15">Build FTE</Link>
+              <Link href="/dashboard/company-builder" className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/15">AI Builder</Link>
               <Link href="/dashboard/workflows" className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-100 hover:bg-emerald-400/15">Run Workflow</Link>
               <a href="/api/export" className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black hover:bg-white/90">Download OS</a>
               <Link href="/onboarding" className="rounded-lg border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5">Rebuild</Link>
