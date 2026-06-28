@@ -285,6 +285,60 @@ export const salesDeals = pgTable('sales_deals', {
   createdAt,
 });
 
+export const crmAccounts = pgTable('crm_accounts', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  ownerAgentId: text('owner_agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  name: text('name').notNull(),
+  website: text('website'),
+  industry: text('industry'),
+  status: text('status').notNull().default('prospect'),
+  annualRevenue: numeric('annual_revenue', { precision: 12, scale: 2 }).notNull().default('0'),
+  notes: text('notes').notNull().default(''),
+  createdAt,
+});
+
+export const crmContacts = pgTable('crm_contacts', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  accountId: text('account_id').references(() => crmAccounts.id, { onDelete: 'set null' }),
+  ownerAgentId: text('owner_agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone'),
+  title: text('title'),
+  lifecycleStage: text('lifecycle_stage').notNull().default('lead'),
+  createdAt,
+});
+
+export const crmActivities = pgTable('crm_activities', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  leadId: text('lead_id').references(() => salesLeads.id, { onDelete: 'set null' }),
+  customerId: text('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  accountId: text('account_id').references(() => crmAccounts.id, { onDelete: 'set null' }),
+  contactId: text('contact_id').references(() => crmContacts.id, { onDelete: 'set null' }),
+  ownerAgentId: text('owner_agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  type: text('type').notNull().default('task'),
+  title: text('title').notNull(),
+  body: text('body').notNull().default(''),
+  status: text('status').notNull().default('open'),
+  dueAt: timestamp('due_at', { withTimezone: true }),
+  createdAt,
+});
+
+export const agentMemories = pgTable('agent_memories', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  sourceType: text('source_type').notNull(),
+  sourceId: text('source_id'),
+  content: text('content').notNull(),
+  embedding: jsonb('embedding').$type<number[]>().notNull().default([]),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt,
+});
+
 export const policies = pgTable('policies', {
   id: text('id').primaryKey(),
   workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
@@ -381,6 +435,10 @@ export const workspaceRelations = relations(workspaces, ({ one, many }) => ({
   customerQueries: many(customerQueries),
   customers: many(customers),
   salesDeals: many(salesDeals),
+  crmAccounts: many(crmAccounts),
+  crmContacts: many(crmContacts),
+  crmActivities: many(crmActivities),
+  agentMemories: many(agentMemories),
 }));
 
 export const departmentRelations = relations(departments, ({ one, many }) => ({

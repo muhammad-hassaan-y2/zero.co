@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { businessResults, customers, db, decisionLedger, salesDeals, salesLeads, simulationEvents } from '@/db';
 import { getApiWorkspace } from '@/lib/api-session';
+import { storeAgentMemory } from '@/lib/agent-memory';
 
 const schema = z.object({
   value: z.coerce.number().min(0).default(0),
@@ -90,6 +91,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     result: `Customer ${customer.id} and deal ${deal.id} created.`,
     approvedBy: ctx.user.email,
     databaseReference: `aurora:sales_deal:${deal.id}`,
+  });
+
+  await storeAgentMemory({
+    workspaceId: ctx.workspace.id,
+    agentId: lead.ownerAgentId,
+    sourceType: 'sales_deal_closed',
+    sourceId: deal.id,
+    content: `Closed won customer ${lead.companyName}. Contact: ${lead.contactName} <${lead.email}>. Value: ${deal.currency} ${deal.value}. Reason: ${deal.closeReason}. Next step: ${deal.nextStep}.`,
+    metadata: { leadId: lead.id, customerId: customer.id, dealId: deal.id },
   });
 
   return NextResponse.json({ lead: updatedLead, customer, deal });

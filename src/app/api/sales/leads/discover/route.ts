@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { db, decisionLedger, salesLeads } from '@/db';
 import { getApiWorkspace } from '@/lib/api-session';
+import { storeAgentMemory } from '@/lib/agent-memory';
 
 const schema = z.object({
   seedUrls: z.string().optional().default(''),
@@ -123,6 +124,13 @@ export async function POST(request: Request) {
       notes: `Discovered by lead agent from ${lead.source}.`,
     }).returning();
     created.push(createdLead);
+    await storeAgentMemory({
+      workspaceId: ctx.workspace.id,
+      agentId: createdLead.ownerAgentId,
+      sourceType: 'sales_lead',
+      sourceId: createdLead.id,
+      content: `Discovered lead ${createdLead.companyName}. Contact: ${createdLead.contactName} <${createdLead.email}>. Source: ${createdLead.source}. Website: ${createdLead.website || 'unknown'}. Pain point: ${createdLead.painPoint}`,
+    });
   }
 
   await db.insert(decisionLedger).values({

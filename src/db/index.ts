@@ -279,6 +279,60 @@ CREATE TABLE sales_deals (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE crm_accounts (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  owner_agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  name text NOT NULL,
+  website text,
+  industry text,
+  status text NOT NULL DEFAULT 'prospect',
+  annual_revenue numeric(12,2) NOT NULL DEFAULT 0,
+  notes text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE crm_contacts (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  account_id text REFERENCES crm_accounts(id) ON DELETE SET NULL,
+  owner_agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  name text NOT NULL,
+  email text NOT NULL,
+  phone text,
+  title text,
+  lifecycle_stage text NOT NULL DEFAULT 'lead',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE crm_activities (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  lead_id text REFERENCES sales_leads(id) ON DELETE SET NULL,
+  customer_id text REFERENCES customers(id) ON DELETE SET NULL,
+  account_id text REFERENCES crm_accounts(id) ON DELETE SET NULL,
+  contact_id text REFERENCES crm_contacts(id) ON DELETE SET NULL,
+  owner_agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  type text NOT NULL DEFAULT 'task',
+  title text NOT NULL,
+  body text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'open',
+  due_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE agent_memories (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  agent_id text REFERENCES digital_ftes(id) ON DELETE SET NULL,
+  source_type text NOT NULL,
+  source_id text,
+  content text NOT NULL,
+  embedding jsonb NOT NULL DEFAULT '[]',
+  metadata jsonb NOT NULL DEFAULT '{}',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE policies (
   id text PRIMARY KEY,
   workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,

@@ -2,13 +2,15 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Search, Send, Sparkles } from 'lucide-react';
+import { Building2, CheckCircle2, ClipboardList, Search, Send, Sparkles, UserPlus } from 'lucide-react';
 
 type Agent = { id: string; name: string };
 type Lead = { id: string; companyName: string; contactName: string; email: string; score: number; status: string };
 type Email = { id: string; leadId?: string | null; subject: string; body: string; status: string; failureReason?: string | null };
 type Query = { id: string; customerName: string; customerEmail: string; companyName?: string | null; subject: string; message: string; intent: string; priority: string; status: string; source: string };
 type Reply = { id: string; queryId?: string | null; subject: string; body: string; status: string; failureReason?: string | null };
+type Account = { id: string; name: string };
+type Contact = { id: string; name: string; email: string };
 
 async function readError(response: Response, fallback: string) {
   const payload = await response.json().catch(() => null);
@@ -347,5 +349,186 @@ export function CustomerReplyActions({ query, reply }: { query: Query; reply?: R
       </div>
       {error && <p className="mt-3 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
     </div>
+  );
+}
+
+export function AddAccountForm({ agents }: { agents: Agent[] }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const response = await fetch('/api/crm/accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: fd.get('name'),
+        website: fd.get('website'),
+        industry: fd.get('industry'),
+        status: fd.get('status'),
+        annualRevenue: fd.get('annualRevenue'),
+        notes: fd.get('notes'),
+        ownerAgentId: fd.get('ownerAgentId') || null,
+      }),
+    });
+    setLoading(false);
+    if (!response.ok) {
+      setError(await readError(response, 'Account could not be created.'));
+      return;
+    }
+    form.reset();
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={submit} className="rounded-lg border border-white/10 bg-white/[.04] p-5">
+      <h2 className="flex items-center gap-2 text-xl font-semibold"><Building2 className="h-5 w-5" /> Account</h2>
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <input name="name" required placeholder="Account name" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <input name="website" placeholder="Website" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <input name="industry" placeholder="Industry" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <select name="status" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          {['prospect', 'active', 'at_risk', 'churned'].map((status) => <option key={status} className="bg-black" value={status}>{status}</option>)}
+        </select>
+        <input name="annualRevenue" type="number" min="0" step="0.01" placeholder="Annual revenue" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <select name="ownerAgentId" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          <option value="">Assign automatically</option>
+          {agents.map((agent) => <option key={agent.id} className="bg-black" value={agent.id}>{agent.name}</option>)}
+        </select>
+        <textarea name="notes" placeholder="Account notes" className="min-h-20 rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2" />
+      </div>
+      {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+      <button disabled={loading} className="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-60">{loading ? 'Adding...' : 'Add account'}</button>
+    </form>
+  );
+}
+
+export function AddContactForm({ accounts, agents }: { accounts: Account[]; agents: Agent[] }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const response = await fetch('/api/crm/contacts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accountId: fd.get('accountId') || null,
+        name: fd.get('name'),
+        email: fd.get('email'),
+        phone: fd.get('phone'),
+        title: fd.get('title'),
+        lifecycleStage: fd.get('lifecycleStage'),
+        ownerAgentId: fd.get('ownerAgentId') || null,
+      }),
+    });
+    setLoading(false);
+    if (!response.ok) {
+      setError(await readError(response, 'Contact could not be created.'));
+      return;
+    }
+    form.reset();
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={submit} className="rounded-lg border border-white/10 bg-white/[.04] p-5">
+      <h2 className="flex items-center gap-2 text-xl font-semibold"><UserPlus className="h-5 w-5" /> Contact</h2>
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <input name="name" required placeholder="Contact name" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <input name="email" required type="email" placeholder="Email" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <input name="phone" placeholder="Phone" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <input name="title" placeholder="Title" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <select name="accountId" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          <option value="">No account</option>
+          {accounts.map((account) => <option key={account.id} className="bg-black" value={account.id}>{account.name}</option>)}
+        </select>
+        <select name="lifecycleStage" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          {['lead', 'marketing_qualified', 'sales_qualified', 'customer'].map((stage) => <option key={stage} className="bg-black" value={stage}>{stage}</option>)}
+        </select>
+        <select name="ownerAgentId" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2">
+          <option value="">Assign automatically</option>
+          {agents.map((agent) => <option key={agent.id} className="bg-black" value={agent.id}>{agent.name}</option>)}
+        </select>
+      </div>
+      {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+      <button disabled={loading} className="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-60">{loading ? 'Adding...' : 'Add contact'}</button>
+    </form>
+  );
+}
+
+export function AddActivityForm({ leads, contacts, agents }: { leads: Lead[]; contacts: Contact[]; agents: Agent[] }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const response = await fetch('/api/crm/activities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        leadId: fd.get('leadId') || null,
+        contactId: fd.get('contactId') || null,
+        ownerAgentId: fd.get('ownerAgentId') || null,
+        type: fd.get('type'),
+        title: fd.get('title'),
+        body: fd.get('body'),
+        status: fd.get('status'),
+        dueAt: fd.get('dueAt') || null,
+      }),
+    });
+    setLoading(false);
+    if (!response.ok) {
+      setError(await readError(response, 'Activity could not be created.'));
+      return;
+    }
+    form.reset();
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={submit} className="rounded-lg border border-white/10 bg-white/[.04] p-5">
+      <h2 className="flex items-center gap-2 text-xl font-semibold"><ClipboardList className="h-5 w-5" /> Task or note</h2>
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <select name="type" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          {['task', 'note', 'call', 'meeting', 'email'].map((type) => <option key={type} className="bg-black" value={type}>{type}</option>)}
+        </select>
+        <select name="status" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          {['open', 'done', 'blocked'].map((status) => <option key={status} className="bg-black" value={status}>{status}</option>)}
+        </select>
+        <input name="title" required placeholder="Title" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2" />
+        <select name="leadId" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          <option value="">No lead</option>
+          {leads.map((lead) => <option key={lead.id} className="bg-black" value={lead.id}>{lead.companyName}</option>)}
+        </select>
+        <select name="contactId" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          <option value="">No contact</option>
+          {contacts.map((contact) => <option key={contact.id} className="bg-black" value={contact.id}>{contact.name}</option>)}
+        </select>
+        <input name="dueAt" type="datetime-local" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <select name="ownerAgentId" className="rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none">
+          <option value="">Assign automatically</option>
+          {agents.map((agent) => <option key={agent.id} className="bg-black" value={agent.id}>{agent.name}</option>)}
+        </select>
+        <textarea name="body" placeholder="Details" className="min-h-20 rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2" />
+      </div>
+      {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+      <button disabled={loading} className="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-60">{loading ? 'Adding...' : 'Add activity'}</button>
+    </form>
   );
 }

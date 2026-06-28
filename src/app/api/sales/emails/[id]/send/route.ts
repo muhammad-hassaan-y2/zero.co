@@ -11,6 +11,7 @@ import {
 } from '@/db';
 import { getApiWorkspace } from '@/lib/api-session';
 import { sendSalesEmail } from '@/lib/ses';
+import { storeAgentMemory } from '@/lib/agent-memory';
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await getApiWorkspace();
@@ -77,6 +78,15 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       result: `Amazon SES accepted message ${providerMessageId}.`,
       approvedBy: ctx.user.email,
       databaseReference: `ses:${providerMessageId}`,
+    });
+
+    await storeAgentMemory({
+      workspaceId: ctx.workspace.id,
+      agentId: email.agentId,
+      sourceType: 'sales_email_sent',
+      sourceId: sentEmail.id,
+      content: `Sent approved sales email to ${lead.companyName} at ${email.toEmail}. Subject: ${email.subject}. SES message: ${providerMessageId}.`,
+      metadata: { leadId: lead.id, providerMessageId },
     });
 
     return NextResponse.json({ email: sentEmail, providerMessageId });
