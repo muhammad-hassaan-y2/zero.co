@@ -1,4 +1,4 @@
-import { ActivityActions, AddAccountForm, AddActivityForm, AddContactForm, AddCustomerQueryForm, AddLeadForm, CloseLeadAction, CrmRealtimeRefresh, CustomerReplyActions, LeadDiscoveryForm, LeadStageControl, SalesEmailActions } from '@/components/sales-execution';
+import { ActivityActions, AddAccountForm, AddActivityForm, AddContactForm, AddCustomerQueryForm, AddLeadForm, CloseLeadAction, CrmAssistantPanel, CrmExportActions, CrmRealtimeRefresh, CustomerReplyActions, LeadDiscoveryForm, LeadStageControl, SalesEmailActions } from '@/components/sales-execution';
 import { Badge, Card, Metric } from '@/components/status';
 import { getWorkspaceData } from '@/lib/data';
 
@@ -21,6 +21,11 @@ export default async function SalesExecutionPage() {
         <Metric label="Closed deals" value={data.salesDeals.filter((deal) => deal.stage === 'closed_won').length} />
         <Metric label="Open activities" value={data.crmActivities.filter((activity) => activity.status === 'open').length} />
         <Metric label="Agent memories" value={data.agentMemories.length} />
+      </div>
+
+      <div className="mt-8 grid gap-6 xl:grid-cols-[2fr_1fr]">
+        <CrmAssistantPanel />
+        <CrmExportActions />
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-3">

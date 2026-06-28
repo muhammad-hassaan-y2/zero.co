@@ -1351,3 +1351,53 @@ Policies: ${JSON.stringify(input.policies.map((policy) => ({ name: policy.name, 
     resultRecord: asString(parsed.resultRecord, 'Customer query triaged and reply prepared.', 500),
   };
 }
+
+export async function planCrmAssistantAction(input: {
+  message: string;
+  workspaceName: string;
+  businessType?: string | null;
+  customers?: string | null;
+  leads: AnyRecord[];
+  accounts: AnyRecord[];
+  contacts: AnyRecord[];
+  activities: AnyRecord[];
+  memories: string[];
+}) {
+  const prompt = `You are ZeroCo's CRM operator. Convert the user's plain-English instruction into one safe CRM action. Prefer executing a concrete action when enough fields exist. If fields are missing, ask a short follow-up.
+
+Allowed actions:
+- create_lead: companyName, contactName, email, website, segment, painPoint, notes
+- create_account: name, website, industry, status, annualRevenue, notes
+- create_contact: name, email, phone, title, lifecycleStage, accountName
+- create_activity: type task|note|call|meeting|email, title, body, status open|done|blocked, leadCompany, contactEmail
+- update_lead_status: leadCompany, status new|qualified|contacted|replied|negotiating|closed_lost|disqualified, reason
+- draft_sales_email: leadCompany
+- answer: reply only, no mutation
+
+Return ONLY valid JSON:
+{
+  "action": "create_lead|create_account|create_contact|create_activity|update_lead_status|draft_sales_email|answer",
+  "reply": "",
+  "confidence": 0.0,
+  "data": {}
+}
+
+Workspace: ${input.workspaceName}
+Business: ${input.businessType || ''}
+Customers: ${input.customers || ''}
+User command: ${input.message}
+Existing leads: ${JSON.stringify(input.leads.map((lead) => ({ id: lead.id, companyName: lead.companyName, contactName: lead.contactName, email: lead.email, status: lead.status })).slice(0, 30))}
+Existing accounts: ${JSON.stringify(input.accounts.map((account) => ({ id: account.id, name: account.name, status: account.status })).slice(0, 30))}
+Existing contacts: ${JSON.stringify(input.contacts.map((contact) => ({ id: contact.id, name: contact.name, email: contact.email })).slice(0, 30))}
+Open activities: ${JSON.stringify(input.activities.filter((activity) => activity.status === 'open').map((activity) => ({ id: activity.id, title: activity.title, type: activity.type })).slice(0, 30))}
+Relevant memory: ${JSON.stringify(input.memories.slice(0, 8))}`;
+
+  const parsed = await runBedrockJson(prompt, 1600);
+  const actions = ['create_lead', 'create_account', 'create_contact', 'create_activity', 'update_lead_status', 'draft_sales_email', 'answer'] as const;
+  return {
+    action: enumValue(parsed.action, actions, 'answer'),
+    reply: asString(parsed.reply, 'I need one more detail before I can safely update the CRM.', 700),
+    confidence: Math.max(0, Math.min(1, Number(parsed.confidence || 0))),
+    data: requireObject(parsed.data || {}, 'CRM assistant data'),
+  };
+}

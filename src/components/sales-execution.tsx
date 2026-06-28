@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, CheckCircle2, ClipboardList, Search, Send, Sparkles, UserPlus } from 'lucide-react';
+import { Bot, Building2, CheckCircle2, ClipboardList, Download, Search, Send, Sparkles, UserPlus } from 'lucide-react';
 
 type Agent = { id: string; name: string };
 type Lead = { id: string; companyName: string; contactName: string; email: string; score: number; status: string };
@@ -31,6 +31,66 @@ export function CrmRealtimeRefresh() {
   }, [router]);
 
   return <p className="mt-3 text-sm text-white/45">Live CRM refresh every 15s. Last sync: {lastRefresh.toLocaleTimeString()}</p>;
+}
+
+export function CrmAssistantPanel() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [reply, setReply] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setReply(null);
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const response = await fetch('/api/crm/assistant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: fd.get('message') }),
+    });
+    setLoading(false);
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      setError(payload?.reply || payload?.error || 'CRM assistant command failed.');
+      return;
+    }
+    setReply(payload?.reply || 'Done.');
+    form.reset();
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={submit} className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-5">
+      <h2 className="flex items-center gap-2 text-xl font-semibold"><Bot className="h-5 w-5" /> AI CRM operator</h2>
+      <div className="mt-4 grid gap-3">
+        <textarea name="message" required placeholder="Example: create a lead for Acme, contact Sara at sara@acme.com, pain is slow support. Or: move Acme to negotiating. Or: draft sales email for Acme." className="min-h-24 rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+      </div>
+      {reply && <p className="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">{reply}</p>}
+      {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+      <button disabled={loading} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-60">
+        <Sparkles className="h-4 w-4" />
+        {loading ? 'Executing...' : 'Run CRM command'}
+      </button>
+    </form>
+  );
+}
+
+export function CrmExportActions() {
+  const sections = ['leads', 'accounts', 'contacts', 'customers', 'deals', 'activities'];
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[.04] p-5">
+      <h2 className="flex items-center gap-2 text-xl font-semibold"><Download className="h-5 w-5" /> Export</h2>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {sections.map((section) => (
+          <a key={section} href={`/api/crm/export?format=csv&section=${section}`} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white/80 hover:bg-white/10">{section}</a>
+        ))}
+      </div>
+      <a href="/api/crm/export" className="mt-3 inline-block text-sm text-cyan-100">Download all as JSON</a>
+    </div>
+  );
 }
 
 export function AddLeadForm({ agents }: { agents: Agent[] }) {
