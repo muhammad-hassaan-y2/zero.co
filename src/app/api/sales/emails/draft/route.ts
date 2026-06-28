@@ -6,6 +6,7 @@ import { db, decisionLedger, outboundEmails, salesLeads } from '@/db';
 import { getApiWorkspace } from '@/lib/api-session';
 import { getWorkspaceData } from '@/lib/data';
 import { draftSalesEmailWithBedrock } from '@/lib/bedrock';
+import { searchAgentMemories, storeAgentMemory } from '@/lib/agent-memory';
 
 const schema = z.object({
   leadId: z.string().min(1),
@@ -25,6 +26,11 @@ export async function POST(request: Request) {
 
   const workspaceData = await getWorkspaceData();
   const salesAgent = workspaceData.agents.find((agent) => `${agent.name} ${agent.role}`.toLowerCase().includes('sales')) || workspaceData.agents[0];
+  const memories = await searchAgentMemories(
+    ctx.workspace.id,
+    `${lead.companyName} ${lead.contactName} ${lead.segment || ''} ${lead.painPoint} ${lead.notes || ''}`,
+    6,
+  );
 
   let draft: Awaited<ReturnType<typeof draftSalesEmailWithBedrock>>;
   try {
@@ -35,6 +41,7 @@ export async function POST(request: Request) {
       lead,
       agents: workspaceData.agents,
       policies: workspaceData.policies,
+      memories: memories.map((memory) => memory.content),
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Sales email draft failed' }, { status: 502 });
@@ -70,6 +77,15 @@ export async function POST(request: Request) {
     result: `Draft ready for ${lead.contactName} at ${lead.email}. Expected outcome: ${draft.expectedOutcome}`,
     approvedBy: null,
     databaseReference: `aurora:outbound_email:${email.id}`,
+  });
+
+  await storeAgentMemory({
+    workspaceId: ctx.workspace.id,
+    agentId: email.agentId,
+    sourceType: 'sales_email_draft',
+    sourceId: email.id,
+    content: `Drafted sales email for ${lead.companyName}. Score ${draft.leadScore}. Reason: ${draft.scoreReason}. Subject: ${draft.subject}. Follow-up: ${draft.followUpPlan.join(' | ')}`,
+    metadata: { leadId: lead.id, memoryMatches: memories.map((memory) => memory.id) },
   });
 
   return NextResponse.json({ lead: updatedLead, email, draft });

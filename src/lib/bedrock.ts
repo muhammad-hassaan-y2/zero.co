@@ -1,5 +1,5 @@
 import 'server-only';
-import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
+import { BedrockRuntimeClient, ConverseCommand, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import type { InferInsertModel } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { companyBlueprints } from '@/db/schema';
@@ -103,6 +103,30 @@ async function converseText(prompt: string, maxTokens: number, temperature = 0.2
   const text = response.output?.message?.content?.find((part) => 'text' in part)?.text;
   if (!text) throw new Error('Amazon Bedrock returned an empty response.');
   return text.trim();
+}
+
+export async function embedTextWithBedrock(text: string) {
+  if (!process.env.AWS_REGION) {
+    throw new Error('AWS_REGION is required for Bedrock embeddings.');
+  }
+
+  const modelId = process.env.AWS_EMBEDDING_MODEL_ID || 'amazon.titan-embed-text-v2:0';
+  const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
+  const body = JSON.stringify({
+    inputText: text.slice(0, 8000),
+    dimensions: 1024,
+    normalize: true,
+  });
+  const response = await client.send(new InvokeModelCommand({
+    modelId,
+    contentType: 'application/json',
+    accept: 'application/json',
+    body,
+  }));
+  const payload = JSON.parse(new TextDecoder().decode(response.body));
+  const embedding = Array.isArray(payload.embedding) ? payload.embedding : payload.embeddingsByType?.float;
+  if (!Array.isArray(embedding)) throw new Error('Amazon Bedrock embedding response did not include a vector.');
+  return embedding.map((value: unknown) => Number(value)).filter((value: number) => Number.isFinite(value));
 }
 
 function parseBedrockJson(text: string) {
@@ -924,6 +948,7 @@ export async function planLiveCompanyBuilderAction(input: {
   agents: AnyRecord[];
   workflows: AnyRecord[];
   policies: AnyRecord[];
+  memories?: string[];
 }) {
   const prompt = `You are ZeroCo's live company-builder operator. The founder is talking or chatting with you in real time. Decide whether to:
 1. ask a useful follow-up question,
@@ -1226,6 +1251,7 @@ export async function draftSalesEmailWithBedrock(input: {
   };
   agents: AnyRecord[];
   policies: AnyRecord[];
+  memories?: string[];
 }) {
   const prompt = `You are ZeroCo's sales execution agent. Score this lead and draft a concise, compliant outbound email. Do not invent case studies, pricing, guarantees, or customer claims. The email must be personalized to the lead's pain point and must be safe for human approval before sending.
 
@@ -1251,6 +1277,7 @@ Website: ${input.lead.website || ''}
 Segment: ${input.lead.segment || ''}
 Pain point: ${input.lead.painPoint}
 Notes: ${input.lead.notes || ''}
+Relevant sales memory: ${JSON.stringify((input.memories || []).slice(0, 8))}
 Available sales agents: ${JSON.stringify(input.agents.map((agent) => ({ name: agent.name, role: agent.role, goal: agent.goal })).slice(0, 8))}
 Policies: ${JSON.stringify(input.policies.map((policy) => ({ name: policy.name, condition: policy.condition, action: policy.action, mode: policy.mode })).slice(0, 12))}`;
 

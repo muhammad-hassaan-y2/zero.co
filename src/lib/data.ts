@@ -46,7 +46,16 @@ type WorkspaceDataRecord = Record<string, WorkspaceDataValue> & {
   email: string;
   customerName: string;
   customerEmail: string;
+  customerId?: string | null;
+  accountId?: string | null;
+  contactId?: string | null;
   website?: string | null;
+  industry?: string | null;
+  annualRevenue: string | number;
+  lifecycleStage: string;
+  phone?: string | null;
+  type: string;
+  dueAt?: Date | string | null;
   segment?: string | null;
   painPoint: string;
   intent: string;
@@ -60,6 +69,13 @@ type WorkspaceDataRecord = Record<string, WorkspaceDataValue> & {
   approvalReason: string;
   providerMessageId?: string | null;
   failureReason?: string | null;
+  closeReason: string;
+  nextStep: string;
+  currency: string;
+  embedding: number[];
+  metadata: Record<string, unknown>;
+  sourceType: string;
+  sourceId?: string | null;
   stepName: string;
   toolUsed?: string | null;
   status: string;
@@ -115,7 +131,7 @@ async function workspaceRows(table: string, workspaceId: string, orderBy = 'crea
 
 export async function getWorkspaceData() {
   const { user, workspace } = await requireWorkspace();
-  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows, leadRows, emailRows, queryRows, replyRows] = await Promise.all([
+  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows, leadRows, emailRows, queryRows, replyRows, customerRows, dealRows, accountRows, contactRows, activityRows, memoryRows] = await Promise.all([
     workspaceRows('departments', workspace.id, 'created_at asc'),
     workspaceRows('digital_ftes', workspace.id, 'created_at asc'),
     workspaceRows('workflows', workspace.id, 'created_at asc'),
@@ -132,6 +148,12 @@ export async function getWorkspaceData() {
     workspaceRows('outbound_emails', workspace.id),
     workspaceRows('customer_queries', workspace.id),
     workspaceRows('customer_replies', workspace.id),
+    workspaceRows('customers', workspace.id),
+    workspaceRows('sales_deals', workspace.id),
+    workspaceRows('crm_accounts', workspace.id),
+    workspaceRows('crm_contacts', workspace.id),
+    workspaceRows('crm_activities', workspace.id),
+    workspaceRows('agent_memories', workspace.id),
   ]);
 
   const spendToday = agentRows.reduce((sum, agent) => sum + Number(agent.costToday || 0), 0);
@@ -169,6 +191,12 @@ export async function getWorkspaceData() {
     outboundEmails: emailRows,
     customerQueries: queryRows,
     customerReplies: replyRows,
+    customers: customerRows,
+    salesDeals: dealRows,
+    crmAccounts: accountRows,
+    crmContacts: contactRows,
+    crmActivities: activityRows,
+    agentMemories: memoryRows,
     metrics: {
       digitalFtesActive: agentRows.filter((agent) => !['paused', 'blocked'].includes(agent.status)).length,
       tasksCompletedToday,
@@ -184,6 +212,10 @@ export async function getWorkspaceData() {
       emailsSent: emailRows.filter((email) => email.status === 'sent').length,
       customerQueries: queryRows.length,
       customerRepliesSent: replyRows.filter((reply) => reply.status === 'sent').length,
+      customers: customerRows.length,
+      closedDeals: dealRows.filter((deal) => deal.stage === 'closed_won').length,
+      crmActivitiesOpen: activityRows.filter((activity) => activity.status === 'open').length,
+      agentMemories: memoryRows.length,
     },
   };
 }

@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { db, salesLeads } from '@/db';
 import { getApiWorkspace } from '@/lib/api-session';
+import { storeAgentMemory } from '@/lib/agent-memory';
 
 const schema = z.object({
   companyName: z.string().min(2),
@@ -39,6 +40,14 @@ export async function POST(request: Request) {
     score: 0,
     source: 'manual',
   }).returning();
+
+  await storeAgentMemory({
+    workspaceId: ctx.workspace.id,
+    agentId: lead.ownerAgentId,
+    sourceType: 'sales_lead',
+    sourceId: lead.id,
+    content: `Sales lead ${lead.companyName}. Contact: ${lead.contactName} <${lead.email}>. Segment: ${lead.segment || 'unknown'}. Pain point: ${lead.painPoint}. Notes: ${lead.notes}`,
+  });
 
   return NextResponse.json({ lead });
 }
