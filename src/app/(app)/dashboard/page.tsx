@@ -40,6 +40,29 @@ export default async function DashboardPage() {
         <Metric label="Verified Result Records" value={data.metrics.verifiedResults} />
       </div>
 
+      <Card className="mt-8">
+        <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <h2 className="text-xl font-semibold">Test and integrate this OS</h2>
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-white/55">
+              Generate a new automation from your business task, run any generated workflow, inspect proof in Results, and download the complete operating package as JSON for integration planning.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/dashboard/company-builder" className="rounded-xl border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/15">Create automation</Link>
+            <Link href="/dashboard/workflows" className="rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-100 hover:bg-emerald-400/15">Run workflow</Link>
+            <a href="/api/export" className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black hover:bg-white/90">Download package</a>
+          </div>
+        </div>
+      </Card>
+
+      <div className="mt-8 grid gap-4 lg:grid-cols-4">
+        <StepCard title="1. Describe" text="Use Live Builder Call or Company Builder to describe the agent, workflow, tools, approvals, and target result." href="/dashboard/live" cta="Open live builder" />
+        <StepCard title="2. Build" text="Bedrock creates agents, workflows, policies, SOPs, events, and ledger records from your request." href="/dashboard/company-builder" cta="Create artifacts" />
+        <StepCard title="3. Run" text="Run generated workflows to create runtime evidence, step logs, business results, and approval records." href="/dashboard/workflows" cta="Run workflows" />
+        <StepCard title="4. Prove" text="Review results, generate operating reports from evidence, and export the OS package." href="/dashboard/results" cta="Inspect results" />
+      </div>
+
       <div className="mt-8">
         <Card>
           <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
@@ -57,7 +80,7 @@ export default async function DashboardPage() {
         <Card>
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Digital Workforce Status</h2>
-            <Link href="/dashboard/digital-ftes" className="text-sm text-cyan-300">Manage FTEs →</Link>
+            <Link href="/dashboard/digital-ftes" className="text-sm text-cyan-300">Manage FTEs</Link>
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {data.agents.slice(0, 8).map((agent) => (
@@ -87,6 +110,11 @@ export default async function DashboardPage() {
                 <p className="mt-1 text-sm text-white/50">{event.description}</p>
               </div>
             ))}
+            {!data.events.length && (
+              <div className="rounded-lg border border-white/10 bg-black/25 p-4 text-sm text-white/45">
+                No runtime events yet. Run a workflow or generate a runtime event from Runtime Tests.
+              </div>
+            )}
           </div>
         </Card>
       </div>
@@ -132,7 +160,7 @@ export default async function DashboardPage() {
         <Card>
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Decision Ledger Preview</h2>
-            <Link href="/dashboard/decision-ledger" className="text-sm text-cyan-300">Open ledger →</Link>
+            <Link href="/dashboard/decision-ledger" className="text-sm text-cyan-300">Open ledger</Link>
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
@@ -153,5 +181,15 @@ export default async function DashboardPage() {
         <p className="mt-3 text-white/60">Next.js API routes connect auth, workspace data, Bedrock generation, Polly voice, Transcribe jobs, automation creation, workflow runtime execution, step evidence, business result records, and the database-backed decision ledger.</p>
       </Card>
     </div>
+  );
+}
+
+function StepCard({ title, text, href, cta }: { title: string; text: string; href: string; cta: string }) {
+  return (
+    <Link href={href} className="rounded-lg border border-white/10 bg-white/[.04] p-5 transition hover:border-cyan-300/25 hover:bg-white/[.07]">
+      <h2 className="font-semibold">{title}</h2>
+      <p className="mt-3 min-h-20 text-sm leading-6 text-white/55">{text}</p>
+      <p className="mt-4 text-sm text-cyan-300">{cta}</p>
+    </Link>
   );
 }

@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { db, pool, account, session, user, verification } from '@/db';
@@ -182,23 +182,13 @@ async function createSessionRow(userId: string, headers?: HeaderSource) {
 
 async function createCredentialAccount(userId: string, password: string) {
   const passwordHash = hashPassword(password);
-  const escapeLiteral = (value: string) => value.replaceAll("'", "''");
-  const statement = `
-    insert into "account" (
-      "id",
-      "account_id",
-      "provider_id",
-      "user_id",
-      "password"
-    ) values (
-      '${escapeLiteral(nanoid())}',
-      '${escapeLiteral(userId)}',
-      'credentials',
-      '${escapeLiteral(userId)}',
-      '${escapeLiteral(passwordHash)}'
-    )
-  `;
-  await db.execute(sql.raw(statement));
+  await db.insert(account).values({
+    id: nanoid(),
+    accountId: userId,
+    providerId: 'credentials',
+    userId,
+    password: passwordHash,
+  });
 }
 
 async function getCredentialAccount(userId: string) {

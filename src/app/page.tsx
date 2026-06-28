@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Database, Orbit, ShieldCheck, Workflow, WalletCards, Zap } from 'lucide-react';
+import { ArrowRight, Database, Orbit, ShieldCheck, Workflow } from 'lucide-react';
 
 const orbitCards = ['Digital FTEs', 'Workflows', 'Policies', 'Budgets', 'Memory', 'Ledger'];
 const workers = ['CEO Operator Agent', 'Sales Agent', 'Support Agent', 'Refund Agent', 'QA Agent', 'Research Agent', 'DevOps Agent'];
@@ -61,7 +61,7 @@ export default function LandingPage() {
           <p className="mt-4 text-white/60">ZeroCo converts your current company/workflow into a living AI-native company OS.</p>
         </div>
         <div className="rounded-[2rem] border border-white/10 bg-black/35 p-6 shadow-2xl backdrop-blur-xl">
-          <p className="rounded-2xl border border-white/10 bg-white/[.04] p-5 text-white/75">“I run a customer support and refund operations agency for ecommerce stores.”</p>
+          <p className="rounded-2xl border border-white/10 bg-white/[.04] p-5 text-white/75">&quot;I run a customer support and refund operations agency for ecommerce stores.&quot;</p>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {[['Departments', 'Support, Refund Ops, QA, Finance'], ['Digital FTEs', 'Support Agent, Refund Agent, QA Agent'], ['Policies', 'Refund limits, spend throttles, data deletion blocks'], ['Workflows', 'Ticket handling, refund processing, QA review'], ['Budgets', 'Daily FTE limits and cost circuit breakers'], ['Ledger', 'Every decision stored for audit and replay']].map(([title, text]) => <div key={title} className="rounded-2xl border border-white/10 bg-white/[.045] p-5"><h3 className="font-medium">{title}</h3><p className="mt-2 text-sm text-white/55">{text}</p></div>)}
           </div>
@@ -96,7 +96,7 @@ export default function LandingPage() {
 }
 
 function Compare({ title, items }: { title: string; items: string[] }) {
-  return <div className="rounded-[2rem] border border-white/10 bg-white/[.04] p-6"><h3 className="font-medium">{title}</h3><ul className="mt-4 space-y-2 text-sm text-white/55">{items.map((item) => <li key={item}>• {item}</li>)}</ul></div>;
+  return <div className="rounded-[2rem] border border-white/10 bg-white/[.04] p-6"><h3 className="font-medium">{title}</h3><ul className="mt-4 space-y-2 text-sm text-white/55">{items.map((item) => <li key={item}>- {item}</li>)}</ul></div>;
 }
 function Feature({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return <div className="rounded-[2rem] border border-white/10 bg-white/[.05] p-8"><div className="text-cyan-200">{icon}</div><h3 className="mt-6 text-2xl font-semibold">{title}</h3><p className="mt-3 text-white/55">{text}</p></div>;

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db, digitalFtes, decisionLedger } from '@/db';
 import { requireWorkspace } from '@/lib/session';
 import { getWorkspaceData } from '@/lib/data';
@@ -16,7 +16,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   await db
     .update(digitalFtes)
     .set({ status: 'throttled', costToday: '3.50' })
-    .where(eq(digitalFtes.id, id));
+    .where(and(eq(digitalFtes.id, id), eq(digitalFtes.workspaceId, workspace.id)));
   const agent = { ...existing, status: 'throttled', costToday: '3.50' };
 
   const entry = {

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
 import { db, departments, decisionLedger } from '@/db';
 import { getApiWorkspace } from '@/lib/api-session';
 import { getWorkspaceData } from '@/lib/data';

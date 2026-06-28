@@ -1,164 +1,168 @@
-# ZeroCo Full-Stack AI-Native Company Builder
+# ZeroCo
 
-ZeroCo is a real end-to-end Next.js app for building and governing AI-native companies. It is not a static prototype and not a startup idea generator. The user brings an existing business or operation; ZeroCo generates and persists the company operating system around it.
+ZeroCo is a Next.js full-stack app for generating and operating an AI-native company OS from a founder's real business context. It is built for hackathon evaluation around one objective: a user can sign up, describe a business, use an LLM to generate company structure, create automations, run workflows, and inspect the resulting audit trail in the dashboard.
 
-## What is included
+## What Is End To End
 
-- Premium cinematic landing page
-- Better Auth email/password authentication
-- Workspace creation during sign-up
-- Protected onboarding flow
-- AWS Aurora PostgreSQL-ready database schema with Drizzle ORM
-- Dynamic onboarding-to-company-OS generation
-- Required Amazon Bedrock generation for the generated company blueprint
-- Amazon Polly speech synthesis API
-- Amazon Transcribe job API
-- Amazon Cognito authentication API routes
-- Database-backed dashboard pages:
-  - Command Center
-  - Company Builder
-  - Company Blueprint
-  - Digital FTEs
-  - Departments
-  - Workflows
-  - SOPs
-  - Policies
-  - Simulation
-  - Decision Ledger
-  - Board Report
-- Real persisted interactions:
-  - create digital FTEs
-  - create departments
-  - create workflows
-  - create policies
-  - simulate company events
-  - approve/reject decisions
-  - throttle/pause agents
-  - generate board reports
+ZeroCo now has two LLM-driven generation paths:
 
-## Tech stack
+1. **Company OS generation**
+   - User completes onboarding with business, customers, tools, risk boundaries, desired outcomes, and selected digital FTEs.
+   - Amazon Bedrock generates the operating system content: company blueprint, departments, digital FTEs, workflows, policies, SOPs, and starter governance decisions.
+   - Artifact counts are not fixed templates. Bedrock decides how many departments, FTEs, workflows, policies, and SOPs are needed for the submitted business. The app assigns IDs and maps returned names into database relationships.
+   - The app persists the generated OS to PostgreSQL through Drizzle.
+   - Dashboard pages read the persisted records dynamically.
 
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-- Better Auth
-- Drizzle ORM
-- PostgreSQL / AWS Aurora PostgreSQL
-- Amazon Bedrock, Polly, and Transcribe via AWS SDK v3
-- Framer Motion + Lucide-ready UI
+2. **Automation package generation**
+   - User describes a business task, desired outcome, trigger, tools, approval rule, autonomy level, and risk level.
+   - Amazon Bedrock designs the automation package: agent, workflow, policy, SOP, event, and ledger entry.
+   - The app persists all generated artifacts together.
+   - The workflow can then be run from the dashboard, producing workflow run records, step evidence, business results, runtime events, and decision ledger records.
 
-## Required environment variables
+This means the core hackathon flow is not static copy. The LLM creates the company operating content and automation content from the user's inputs, and the dashboard displays database-backed results.
 
-```env
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-BETTER_AUTH_URL=http://localhost:3000
-BETTER_AUTH_SECRET=replace-with-openssl-rand-base64-32
-DATABASE_URL=postgresql://DB_USER:DB_PASSWORD@AURORA_CLUSTER_ENDPOINT:5432/zeroco?sslmode=require
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your_key
-AWS_SECRET_ACCESS_KEY=your_secret
-AWS_SESSION_TOKEN=optional_if_using_temporary_credentials
-AWS_BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20240620-v1:0
-AWS_POLLY_VOICE_ID=Joanna
-AWS_POLLY_ENGINE=neural
-AWS_TRANSCRIBE_LANGUAGE_CODE=en-US
-AWS_TRANSCRIBE_OUTPUT_BUCKET=your-transcribe-output-bucket
-AWS_COGNITO_USER_POOL_ID=your-user-pool-id
-AWS_COGNITO_CLIENT_ID=your-user-pool-app-client-id
-```
+## Dashboard Functionality
 
-Generate the auth secret:
+- **Command Center**: shows metrics from live workspace data.
+- **Live Builder Call**: lets the user talk or chat with a Bedrock-powered operator that can create agents, workflows, policies, SOPs, events, and ledger records in real time.
+- **Company Builder**: creates LLM-designed automation packages.
+- **Sales Agent Builder**: creates a complete LLM-designed sales engine with ICP research, lead sourcing, qualification, outreach, follow-up, demo booking, CRM hygiene, policies, SOPs, and testable workflows.
+- **Company Blueprint**: shows the generated company model.
+- **Digital FTEs**: lists agents and supports pause/throttle actions with audit entries.
+- **Departments**: creates and lists company departments.
+- **Workflows**: creates workflows and runs them for measurable results.
+- **Results Center**: shows workflow runs, step evidence, artifacts, costs, and business results.
+- **SOPs**: shows generated SOPs linked to workflows.
+- **Policies**: creates and lists governance policies.
+- **Runtime Tests**: runs generated workflows and can create LLM-generated operating events from the current OS.
+- **Decision Ledger**: approves/rejects pending decisions and stores the result.
+- **Operating Reports**: generates reports only after workflow runtime evidence exists.
+- **Live Voice**: uses Bedrock for reply generation and Polly for speech output.
+- **Download OS**: exports the generated company OS, workflows, policies, evidence, results, ledger, reports, metrics, and evaluation runbook as JSON.
 
-```bash
-openssl rand -base64 32
-```
+## Objective Evaluation Flow
 
-## Amazon/AWS credentials needed
+1. Install dependencies:
 
-### Required for H0 MVP
+   ```bash
+   npm install
+   ```
 
-Your Aurora PostgreSQL connection string is required by the app:
+2. Configure environment variables in `.env.local`.
 
-```env
-DATABASE_URL=postgresql://DB_USER:DB_PASSWORD@AURORA_CLUSTER_ENDPOINT:5432/zeroco?sslmode=require
-```
+3. Push the database schema:
 
-You get these values from AWS RDS/Aurora:
+   ```bash
+   npm run db:push
+   ```
 
-- Aurora cluster writer endpoint
-- database name
-- database username
-- database password
-- port, usually 5432
+4. Start the app:
 
-### Required Amazon AI services
+   ```bash
+   npm run dev
+   ```
 
-ZeroCo requires Amazon Bedrock for onboarding-to-company-OS blueprint generation, Amazon Polly for speech synthesis, and Amazon Transcribe for transcription jobs:
+5. Open `http://localhost:3000`.
 
-```env
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your_key
-AWS_SECRET_ACCESS_KEY=your_secret
-AWS_SESSION_TOKEN=optional_if_using_temporary_credentials
-AWS_BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20240620-v1:0
-AWS_POLLY_VOICE_ID=Joanna
-AWS_POLLY_ENGINE=neural
-AWS_TRANSCRIBE_LANGUAGE_CODE=en-US
-AWS_TRANSCRIBE_OUTPUT_BUCKET=your-transcribe-output-bucket
-AWS_COGNITO_USER_POOL_ID=your-user-pool-id
-AWS_COGNITO_CLIENT_ID=your-user-pool-app-client-id
-```
+6. Sign up and create a workspace.
 
-If these are not set, onboarding generation and the AWS speech/transcription APIs return configuration errors instead of silently falling back.
+7. Complete onboarding.
 
-### Amazon Cognito authentication
+   Expected result: Bedrock generates a company OS and the dashboard loads generated departments, FTEs, workflows, policies, SOPs, blueprint, and ledger records.
 
-AWS-native authentication routes are available alongside the existing app auth flow:
+8. Go to **Company Builder** and create a new automation.
 
-- `POST /api/aws-auth/sign-up` accepts `{ "email": "...", "password": "...", "name": "..." }`.
-- `POST /api/aws-auth/confirm` accepts `{ "email": "...", "code": "123456" }`.
-- `POST /api/aws-auth/sign-in` accepts `{ "email": "...", "password": "..." }` and returns Cognito tokens.
+   Expected result: Bedrock generates a task-specific agent, workflow, policy, SOP, event, and ledger record.
 
-Create a Cognito User Pool app client that supports `USER_PASSWORD_AUTH`, then set `AWS_COGNITO_CLIENT_ID`.
+9. Go to **Live Builder Call** and describe an agent or workflow in chat or by microphone.
 
-Never commit real keys to GitHub. Add them to `.env.local` locally and Vercel Environment Variables in production.
+   Expected result: Bedrock decides whether to ask a follow-up or create artifacts. If enough detail is provided, the app persists the generated agent, workflows, policies, SOPs, events, and ledger records.
 
-## Install
+10. Click **Build Sales Agent**.
+
+   Expected result: Bedrock generates a dedicated Sales Agent, Sales/Revenue department, sales workflows, sales governance policies, SOPs, runtime events, and decision records.
+
+11. Go to **Workflows** and click **Run for result**.
+
+   Expected result: the app creates a workflow run, step evidence, business result records, event records, and decision ledger entries.
+
+12. Go to **Results Center** and **Decision Ledger**.
+
+    Expected result: generated artifacts are visible as persisted records, not hardcoded UI data.
+
+13. Click **Download OS**.
+
+    Expected result: the browser downloads a JSON package containing the generated company operating system, runtime evidence, and integration runbook.
+
+## Configuration
+
+Configure `.env.local` with the app URL, auth secret, PostgreSQL/Aurora database URL, and AWS credentials for Bedrock. Bedrock is required for company OS generation and automation package generation. If Bedrock is not configured, those routes return a visible error instead of silently falling back to static content.
+
+## Scripts
 
 ```bash
-npm install
-cp .env.example .env.local
+npm run dev        # Start local development server
+npm run build      # Production build
+npm run lint       # ESLint quality gate
+npm run start      # Start production server
+npm run db:push    # Push Drizzle schema
+npm run db:studio  # Open Drizzle Studio
 ```
 
-Fill `.env.local`, then push the schema:
+Current verification status:
 
 ```bash
-npm run db:push
-npm run dev
+npm run lint
+npm run build
 ```
 
-## User flow
+Both pass.
 
-1. Visit `/` landing page.
-2. Sign up at `/sign-up`.
-3. Workspace is created automatically.
-4. Complete `/onboarding` with an existing business/operation.
-5. ZeroCo generates departments, digital FTEs, workflows, SOPs, policies, simulation events, decision ledger entries, blueprint, and board report.
-6. Dashboard loads all data dynamically from PostgreSQL.
+## Architecture
 
-## Amazon AI APIs
+- **Frontend**: Next.js App Router, React, Tailwind CSS, Lucide icons.
+- **Backend**: Next.js route handlers.
+- **Database**: PostgreSQL/Aurora-ready schema with Drizzle ORM.
+- **LLM**: Amazon Bedrock Converse API.
+- **Voice**: Amazon Polly speech synthesis.
+- **Transcription**: Amazon Transcribe job APIs.
+- **Auth**: local email/password session flow using the app's auth tables, plus optional Cognito API routes.
 
-- `POST /api/speech` accepts `{ "text": "...", "voiceId": "Joanna" }` and returns MP3 audio from Amazon Polly.
-- `POST /api/transcribe` accepts `{ "mediaUri": "s3://bucket/file.mp3", "languageCode": "en-US", "mediaFormat": "mp3" }` and starts an Amazon Transcribe job.
-- `GET /api/transcribe?jobName=...` returns the current Amazon Transcribe job status and transcript metadata.
-- `/dashboard/live` provides a live voice interface: microphone input, Bedrock response generation, and Polly voice playback.
+## Data Model
 
-## H0 database story
+The database stores:
 
-- AWS Aurora PostgreSQL stores users, sessions, workspaces, onboarding profiles, company blueprints, departments, digital FTEs, workflows, SOPs, policies, simulation events, decision ledger entries, and board reports.
-- Every action in the product writes to the database, so the demo can show a real audit trail.
-- Bedrock generates the AI-native blueprint, and Aurora PostgreSQL stores the generated operating system, audit trail, and reports.
+- users, accounts, sessions, password reset verification records
+- workspaces
+- onboarding profiles
+- company blueprints
+- departments
+- digital FTEs
+- workflows
+- workflow runs
+- workflow step evidence
+- business results
+- SOPs
+- policies
+- simulation events
+- decision ledger records
+- board reports
 
-## Notes
+## Production Notes
 
-The app is intentionally production-shaped but still hackathon-scope. Add email delivery with Amazon SES or Resend before real password reset emails. Add real tool integrations after the H0 submission.
+This is a hackathon-ready MVP, not yet a fully production-hardened SaaS. Before production use:
+
+- add automated tests for auth, workspace isolation, onboarding generation, automation generation, and workflow execution
+- add email delivery for password resets
+- add rate limiting to LLM and voice routes
+- add structured observability for Bedrock/Polly/Transcribe failures
+- add real external tool connectors for one or more workflows
+- add role-based team permissions if workspaces become multi-user
+
+## Win Readiness
+
+ZeroCo has a credible hackathon story because it demonstrates a complete loop:
+
+business input -> LLM-generated company OS -> persisted dashboard -> LLM-generated automation -> workflow run -> evidence/results/ledger/report.
+
+The strongest demo path is to show two different businesses during judging and prove that the generated departments, agents, workflows, policies, SOPs, and automation packages change based on the user input.

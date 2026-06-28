@@ -4,6 +4,7 @@ import { SignOutButton } from '@/app/(app)/dashboard/sign-out-button';
 
 const nav = [
   ['Command Center', '/dashboard'],
+  ['Live Builder Call', '/dashboard/live'],
   ['Company Builder', '/dashboard/company-builder'],
   ['Blueprint', '/dashboard/blueprint'],
   ['Digital FTEs', '/dashboard/digital-ftes'],
@@ -12,10 +13,10 @@ const nav = [
   ['Results', '/dashboard/results'],
   ['SOPs', '/dashboard/sops'],
   ['Policies', '/dashboard/policies'],
-  ['Simulation', '/dashboard/simulation'],
+  ['Runtime Tests', '/dashboard/simulation'],
   ['Decision Ledger', '/dashboard/decision-ledger'],
-  ['Board Report', '/dashboard/board-report'],
-  ['Settings', '/dashboard/settings'],
+  ['Operating Reports', '/dashboard/board-report'],
+  ['Workspace', '/dashboard/settings'],
 ];
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -41,6 +42,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/" className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5">Landing</Link>
+              <a href="/api/export" className="rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-100 hover:bg-emerald-400/15">Download OS</a>
               <Link href="/onboarding" className="rounded-xl border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/15">Rebuild OS</Link>
               <SignOutButton />
             </div>

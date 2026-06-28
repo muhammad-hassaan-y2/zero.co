@@ -1,4 +1,4 @@
-import { AgentActions } from '@/components/action-buttons';
+import { AgentActions, BuildSalesAgentButton } from '@/components/action-buttons';
 import { AddAgentForm } from '@/components/builder-forms';
 import { Badge, Card } from '@/components/status';
 import { getWorkspaceData } from '@/lib/data';
@@ -30,6 +30,16 @@ export default async function DigitalFtesPage() {
           </div>
         </div>
       </div>
+
+      <Card className="mt-8 border-emerald-300/15 bg-emerald-400/[.06]">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div>
+            <h2 className="text-xl font-semibold">Need a stronger sales operator?</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/60">Generate a dedicated Sales Agent with complete pipeline, outreach, CRM, approval, and SOP coverage for this workspace.</p>
+          </div>
+          <BuildSalesAgentButton />
+        </div>
+      </Card>
 
       <div className="mt-8">
         <AddAgentForm departments={data.departments.map((department) => ({ id: department.id, name: department.name }))} />
