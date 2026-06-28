@@ -28,7 +28,7 @@ const groups = [
     title: 'Operate',
     items: [
       { label: 'Workforce', href: '/dashboard/workforce', icon: Bot },
-      { label: 'Sales Execution', href: '/dashboard/sales', icon: Mail },
+      { label: 'Lead CRM', href: '/dashboard/sales', icon: Mail },
       { label: 'Workflows', href: '/dashboard/workflows', icon: GitBranch },
     ],
   },
@@ -105,7 +105,7 @@ export function DashboardFeatureMap() {
   const cards = [
     { title: 'Build company OS', text: 'Chat, talk, diagnose, or use structured Problem-to-FTE creation from one AI Company Builder.', href: '/dashboard/company-builder', icon: BrainCircuit },
     { title: 'Operate workforce', text: 'Manage departments, Digital FTEs, ownership, risk, budget, and agent controls from one workforce view.', href: '/dashboard/workforce', icon: Bot },
-    { title: 'Send approved outreach', text: 'Add leads, draft sales emails with Bedrock, approve them, and send through Amazon SES with audit evidence.', href: '/dashboard/sales', icon: Mail },
+    { title: 'Lead and customer CRM', text: 'Manage leads and customer queries, draft emails with Bedrock, approve them, and send through Amazon SES.', href: '/dashboard/sales', icon: Mail },
     { title: 'Govern safely', text: 'Review policies, SOPs, approval queues, blocked actions, and decision ledger coverage in one place.', href: '/dashboard/governance', icon: ShieldCheck },
     { title: 'Evaluate evidence', text: 'Run workflows, inspect step evidence and results, then generate operating reports from records.', href: '/dashboard/evaluation', icon: FileJson },
   ];

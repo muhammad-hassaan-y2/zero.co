@@ -25,6 +25,7 @@
     "better-auth": "latest",
     "class-variance-authority": "latest",
     "clsx": "latest",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "latest",
     "framer-motion": "latest",
     "lucide-react": "latest",

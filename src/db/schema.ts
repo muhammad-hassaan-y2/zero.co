@@ -71,6 +71,7 @@ export const workflowRunStatus = pgEnum('workflow_run_status', ['queued', 'runni
 export const resultStatus = pgEnum('result_status', ['projected', 'verified', 'blocked']);
 export const leadStatus = pgEnum('lead_status', ['new', 'qualified', 'contacted', 'replied', 'disqualified']);
 export const outboundEmailStatus = pgEnum('outbound_email_status', ['draft', 'pending_approval', 'sent', 'failed', 'blocked']);
+export const customerQueryStatus = pgEnum('customer_query_status', ['new', 'triaged', 'pending_approval', 'replied', 'closed', 'blocked']);
 
 export const workspaces = pgTable('workspaces', {
   id: text('id').primaryKey(),
@@ -225,6 +226,38 @@ export const outboundEmails = pgTable('outbound_emails', {
   createdAt,
 });
 
+export const customerQueries = pgTable('customer_queries', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  ownerAgentId: text('owner_agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  customerName: text('customer_name').notNull(),
+  customerEmail: text('customer_email').notNull(),
+  companyName: text('company_name'),
+  subject: text('subject').notNull(),
+  message: text('message').notNull(),
+  intent: text('intent').notNull().default('general'),
+  priority: riskLevel('priority').notNull().default('medium'),
+  status: customerQueryStatus('status').notNull().default('new'),
+  source: text('source').notNull().default('manual'),
+  createdAt,
+});
+
+export const customerReplies = pgTable('customer_replies', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  queryId: text('query_id').notNull().references(() => customerQueries.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').references(() => digitalFtes.id, { onDelete: 'set null' }),
+  toEmail: text('to_email').notNull(),
+  subject: text('subject').notNull(),
+  body: text('body').notNull(),
+  status: outboundEmailStatus('status').notNull().default('pending_approval'),
+  approvalReason: text('approval_reason').notNull(),
+  providerMessageId: text('provider_message_id'),
+  failureReason: text('failure_reason'),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+  createdAt,
+});
+
 export const policies = pgTable('policies', {
   id: text('id').primaryKey(),
   workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
@@ -318,6 +351,7 @@ export const workspaceRelations = relations(workspaces, ({ one, many }) => ({
   workflowRuns: many(workflowRuns),
   businessResults: many(businessResults),
   salesLeads: many(salesLeads),
+  customerQueries: many(customerQueries),
 }));
 
 export const departmentRelations = relations(departments, ({ one, many }) => ({
