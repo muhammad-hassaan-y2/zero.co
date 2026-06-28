@@ -10,6 +10,7 @@ type WorkspaceDataRecord = Record<string, WorkspaceDataValue> & {
   agentId?: string | null;
   departmentId?: string | null;
   ownerAgentId?: string | null;
+  leadId?: string | null;
   workflowId?: string | null;
   workflowRunId?: string | null;
   name: string;
@@ -40,6 +41,19 @@ type WorkspaceDataRecord = Record<string, WorkspaceDataValue> & {
   unit: string;
   resultSummary: string;
   evidence: string;
+  contactName: string;
+  email: string;
+  website?: string | null;
+  segment?: string | null;
+  painPoint: string;
+  source: string;
+  notes: string;
+  toEmail: string;
+  subject: string;
+  body: string;
+  approvalReason: string;
+  providerMessageId?: string | null;
+  failureReason?: string | null;
   stepName: string;
   toolUsed?: string | null;
   status: string;
@@ -66,6 +80,7 @@ type WorkspaceDataRecord = Record<string, WorkspaceDataValue> & {
   hoursSaved: number;
   riskyActionsBlocked: number;
   stepIndex: number;
+  score: number;
   coreKpis: string[];
   launchChecklist: string[];
   recommendations: string[];
@@ -94,7 +109,7 @@ async function workspaceRows(table: string, workspaceId: string, orderBy = 'crea
 
 export async function getWorkspaceData() {
   const { user, workspace } = await requireWorkspace();
-  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows] = await Promise.all([
+  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows, leadRows, emailRows] = await Promise.all([
     workspaceRows('departments', workspace.id, 'created_at asc'),
     workspaceRows('digital_ftes', workspace.id, 'created_at asc'),
     workspaceRows('workflows', workspace.id, 'created_at asc'),
@@ -107,6 +122,8 @@ export async function getWorkspaceData() {
     workspaceRows('workflow_runs', workspace.id),
     workspaceRows('workflow_step_runs', workspace.id),
     workspaceRows('business_results', workspace.id),
+    workspaceRows('sales_leads', workspace.id),
+    workspaceRows('outbound_emails', workspace.id),
   ]);
 
   const spendToday = agentRows.reduce((sum, agent) => sum + Number(agent.costToday || 0), 0);
@@ -140,6 +157,8 @@ export async function getWorkspaceData() {
     workflowRuns: runRows,
     workflowStepRuns: stepRunRows,
     businessResults: resultRows,
+    salesLeads: leadRows,
+    outboundEmails: emailRows,
     metrics: {
       digitalFtesActive: agentRows.filter((agent) => !['paused', 'blocked'].includes(agent.status)).length,
       tasksCompletedToday,
@@ -151,6 +170,8 @@ export async function getWorkspaceData() {
       agentRoi: spendToday > 0 ? Math.max(1.2, (tasksCompletedToday * 8) / spendToday) : 1,
       workflowRunsCompleted: runRows.filter((run) => run.status === 'completed').length,
       verifiedResults: resultRows.filter((result) => result.status === 'verified').length,
+      salesLeads: leadRows.length,
+      emailsSent: emailRows.filter((email) => email.status === 'sent').length,
     },
   };
 }

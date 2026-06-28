@@ -1210,3 +1210,59 @@ Risk controls: ${input.riskControls}`;
     objectiveEvaluation: asStringArray(parsed.objectiveEvaluation, [], 12),
   };
 }
+
+export async function draftSalesEmailWithBedrock(input: {
+  workspaceName: string;
+  businessType?: string | null;
+  customers?: string | null;
+  lead: {
+    companyName: string;
+    contactName: string;
+    email: string;
+    website?: string | null;
+    segment?: string | null;
+    painPoint: string;
+    notes?: string | null;
+  };
+  agents: AnyRecord[];
+  policies: AnyRecord[];
+}) {
+  const prompt = `You are ZeroCo's sales execution agent. Score this lead and draft a concise, compliant outbound email. Do not invent case studies, pricing, guarantees, or customer claims. The email must be personalized to the lead's pain point and must be safe for human approval before sending.
+
+Return ONLY valid JSON:
+{
+  "leadScore": 1,
+  "scoreReason": "",
+  "subject": "",
+  "body": "",
+  "approvalReason": "",
+  "policyChecks": [],
+  "expectedOutcome": "",
+  "followUpPlan": []
+}
+
+Workspace: ${input.workspaceName}
+Business: ${input.businessType || ''}
+Customers: ${input.customers || ''}
+Lead company: ${input.lead.companyName}
+Contact: ${input.lead.contactName}
+Email: ${input.lead.email}
+Website: ${input.lead.website || ''}
+Segment: ${input.lead.segment || ''}
+Pain point: ${input.lead.painPoint}
+Notes: ${input.lead.notes || ''}
+Available sales agents: ${JSON.stringify(input.agents.map((agent) => ({ name: agent.name, role: agent.role, goal: agent.goal })).slice(0, 8))}
+Policies: ${JSON.stringify(input.policies.map((policy) => ({ name: policy.name, condition: policy.condition, action: policy.action, mode: policy.mode })).slice(0, 12))}`;
+
+  const parsed = await runBedrockJson(prompt, 1800);
+  return {
+    leadScore: Math.max(1, Math.min(100, Math.round(Number(parsed.leadScore || 50)))),
+    scoreReason: asString(parsed.scoreReason, 'Lead scored from submitted company context and pain point.', 600),
+    subject: asString(parsed.subject, `Quick idea for ${input.lead.companyName}`, 180),
+    body: asString(parsed.body, `Hi ${input.lead.contactName},\n\nI noticed ${input.lead.companyName} may be dealing with ${input.lead.painPoint}. Would it be useful to compare a lightweight automation approach?\n\nBest,`, 2200),
+    approvalReason: asString(parsed.approvalReason, 'Human approval required before customer-facing outreach is sent.', 700),
+    policyChecks: asStringArray(parsed.policyChecks, ['No unverified claims', 'No bulk send without approval', 'Respect opt-out requests'], 10),
+    expectedOutcome: asString(parsed.expectedOutcome, 'Start a qualified sales conversation.', 400),
+    followUpPlan: asStringArray(parsed.followUpPlan, ['Wait 3 business days before follow-up', 'Stop if recipient opts out'], 8),
+  };
+}

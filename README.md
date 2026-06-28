@@ -112,6 +112,7 @@ This means the core hackathon flow is not static copy. The LLM creates the compa
 - Convert a real business problem into AWS architecture, Mode 1 test plan, and Mode 2 Digital FTE package.
 - Generate software/application specs for frontend, backend, data models, agents, connectors, and AWS deployment.
 - Generate sales-agent operating systems and sales workflows.
+- Run a real approval-gated sales email loop with leads, Bedrock drafts, Amazon SES sending, and audit evidence.
 - Generate email/sales/finance/custom automation specifications with approval gates.
 - Run generated internal workflows and create runtime evidence.
 - Approve/reject decisions in the governance ledger.
@@ -121,6 +122,7 @@ This means the core hackathon flow is not static copy. The LLM creates the compa
 ## What Must Be Added For Production-Grade External Execution
 
 - **Email connector**: Amazon SES, Gmail, or Microsoft Graph for real sending, reply tracking, unsubscribe handling, and approval-before-send.
+- **Email connector expansion**: Amazon SES sending is implemented for approved sales drafts. Reply tracking, unsubscribe management, bounce handling, and Gmail/Microsoft Graph connectors still need to be added.
 - **CRM connector**: HubSpot, Salesforce, or Pipedrive for leads, pipeline stages, notes, and activity logging.
 - **Commerce connector**: Shopify API for orders, customers, refunds, fulfillment, and support context.
 - **Payments connector**: Stripe API for invoices, subscriptions, refunds, disputes, and finance controls.
@@ -129,6 +131,20 @@ This means the core hackathon flow is not static copy. The LLM creates the compa
 - **Secrets vault**: per-workspace connector credentials stored through AWS Secrets Manager or equivalent.
 - **Scheduler/queue**: EventBridge, SQS, and Step Functions for recurring automations and reliable retries.
 - **Connector audit layer**: every external read/write action must create evidence, policy match, and ledger record.
+
+## Real Sales Email Execution
+
+The first real external execution path is **Sales Execution**:
+
+1. Configure `AWS_REGION` and `SES_FROM_EMAIL`.
+2. Verify `SES_FROM_EMAIL` in Amazon SES.
+3. Open **Sales Execution**.
+4. Add a lead.
+5. Generate a Bedrock sales draft.
+6. Approve and send through SES.
+7. Review the resulting ledger entry, runtime event, and verified business result.
+
+If SES is not configured, the send action is blocked and the failure is recorded in the decision ledger instead of pretending the email was sent.
 
 ## Configuration
 
