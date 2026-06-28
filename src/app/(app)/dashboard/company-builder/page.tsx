@@ -1,14 +1,47 @@
 import Link from 'next/link';
-import { AddAutomationForm } from '@/components/builder-forms';
+import { AddAutomationForm, ProblemToFteBuilder, SoftwareFactoryBuilder } from '@/components/builder-forms';
+import { BuildSalesAgentButton } from '@/components/action-buttons';
 import { Card } from '@/components/status';
 import { getWorkspaceData } from '@/lib/data';
+import { LiveVoiceAgent } from '../live/voice-agent';
 
 export default async function CompanyBuilderPage() {
   const data = await getWorkspaceData();
   return (
     <div>
-      <h1 className="text-4xl font-semibold tracking-tight">Company Builder</h1>
-      <p className="mt-3 max-w-3xl text-white/60">Create new AI agents, workflows, policies, and SOPs around real tasks the user wants to automate.</p>
+      <h1 className="text-4xl font-semibold tracking-tight">AI Company Builder</h1>
+      <p className="mt-3 max-w-3xl text-white/60">One place to chat, talk, diagnose, and manufacture Digital FTEs, workflows, policies, SOPs, and operating evidence from the user&apos;s requirements.</p>
+
+      <Card className="mt-8 border-cyan-300/15 bg-cyan-400/[.055]">
+        <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+          <div>
+            <h2 className="text-xl font-semibold">Chat or voice builder</h2>
+            <p className="mt-1 text-sm text-white/55">Use text or live speech to describe the company, agent, workflow, tools, approvals, and target result. Created artifacts appear across the same dashboard.</p>
+          </div>
+          <span className="rounded-lg border border-cyan-300/20 bg-black/25 px-3 py-2 text-xs text-cyan-100">Unified chat + call</span>
+        </div>
+        <LiveVoiceAgent />
+      </Card>
+
+      <div className="mt-8">
+        <ProblemToFteBuilder />
+      </div>
+
+      <div className="mt-8">
+        <SoftwareFactoryBuilder />
+      </div>
+
+      <Card className="mt-8 border-emerald-300/15 bg-emerald-400/[.06]">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div>
+            <h2 className="text-xl font-semibold">Revenue engine</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/60">
+              Generate a complete Sales Agent with ICP research, lead sourcing, qualification, outreach, follow-up, demo booking, CRM hygiene, sales policies, SOPs, and testable workflows.
+            </p>
+          </div>
+          <BuildSalesAgentButton />
+        </div>
+      </Card>
 
       <div className="mt-8">
         <AddAutomationForm departments={data.departments.map((department) => ({ id: department.id, name: department.name }))} />

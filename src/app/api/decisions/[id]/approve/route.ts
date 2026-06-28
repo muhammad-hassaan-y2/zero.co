@@ -1,22 +1,24 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import { db, decisionLedger } from '@/db';
-import { requireUser } from '@/lib/session';
+import { and, eq } from 'drizzle-orm';
+import { db, pool, decisionLedger } from '@/db';
+import { requireWorkspace } from '@/lib/session';
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await requireUser();
+  const { user, workspace } = await requireWorkspace();
   const { id } = await params;
 
-  const [decision] = await db
+  const existing = await pool.query('select * from decision_ledger where id = $1 and workspace_id = $2 limit 1', [id, workspace.id]);
+  if (!existing.rows[0]) return NextResponse.json({ error: 'Decision not found' }, { status: 404 });
+
+  await db
     .update(decisionLedger)
     .set({
       decision: 'approved',
       result: 'Approved by human operator',
       approvedBy: user.name || user.email,
     })
-    .where(eq(decisionLedger.id, id))
-    .returning();
+    .where(and(eq(decisionLedger.id, id), eq(decisionLedger.workspaceId, workspace.id)));
 
-  if (!decision) return NextResponse.json({ error: 'Decision not found' }, { status: 404 });
+  const decision = { ...existing.rows[0], decision: 'approved', result: 'Approved by human operator', approved_by: user.name || user.email };
   return NextResponse.json({ decision });
 }

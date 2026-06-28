@@ -2,32 +2,59 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Badge, Card, Metric } from '@/components/status';
 import { DecisionActions } from '@/components/action-buttons';
+import { DashboardFeatureMap, WorkspaceSummaryStrip } from '@/components/dashboard-nav';
 import { getWorkspaceData } from '@/lib/data';
 import { LiveVoiceAgent } from './live/voice-agent';
 
 export default async function DashboardPage() {
   const data = await getWorkspaceData();
   if (!data.agents.length) redirect('/onboarding');
+  const readinessItems = [
+    { label: 'Company OS generated', done: Boolean(data.blueprint && data.agents.length && data.workflows.length) },
+    { label: 'Digital FTEs selected', done: data.agents.length > 0 },
+    { label: 'Policies and SOPs present', done: data.policies.length > 0 && data.sops.length > 0 },
+    { label: 'Workflow runtime tested', done: data.workflowRuns.length > 0 },
+    { label: 'Business evidence produced', done: data.businessResults.length > 0 },
+    { label: 'Operating report ready', done: data.reports.length > 0 },
+  ];
+  const readinessScore = Math.round((readinessItems.filter((item) => item.done).length / readinessItems.length) * 100);
+
   return (
     <div>
       <div className="mb-8 flex flex-col justify-between gap-5 border-b border-white/10 pb-6 xl:flex-row xl:items-end">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">AI-Native Company Command Center</h1>
-          <p className="mt-3 max-w-4xl text-white/60">Monitor your digital workforce, policies, spend, approvals, operating health, and live AI operator from database-backed records.</p>
+          <p className="mt-3 max-w-4xl text-white/60">Build, run, evaluate, govern, and export the company OS from database-backed records. Each section works from the current workspace rather than static demo content.</p>
         </div>
-        <div className="grid min-w-[260px] grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg border border-white/10 bg-black/25 p-3">
-            <p className="text-white/40">Departments</p>
-            <p className="mt-1 text-2xl font-semibold">{data.departments.length}</p>
+        <div className="min-w-[280px] rounded-lg border border-white/10 bg-black/30 p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-white/45">End-to-end readiness</p>
+              <p className="mt-1 text-3xl font-semibold">{readinessScore}%</p>
+            </div>
+            <Link href="/dashboard/workflows" className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">Test</Link>
           </div>
-          <div className="rounded-lg border border-white/10 bg-black/25 p-3">
-            <p className="text-white/40">Workflows</p>
-            <p className="mt-1 text-2xl font-semibold">{data.workflows.length}</p>
+          <div className="mt-4 h-2 rounded-full bg-white/10">
+            <div className="h-2 rounded-full bg-cyan-300" style={{ width: `${readinessScore}%` }} />
           </div>
+          <p className="mt-3 text-xs text-white/45">Run workflows and generate an operating report to complete objective evaluation.</p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <WorkspaceSummaryStrip counts={{
+        departments: data.departments.length,
+        agents: data.agents.length,
+        workflows: data.workflows.length,
+        policies: data.policies.length,
+        sops: data.sops.length,
+        results: data.businessResults.length,
+      }} />
+
+      <div className="mt-6">
+        <DashboardFeatureMap />
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Metric label="Digital FTEs Active" value={data.metrics.digitalFtesActive} />
         <Metric label="Tasks Completed Today" value={data.metrics.tasksCompletedToday} />
         <Metric label="AI Spend Today" value={`$${data.metrics.aiSpendToday.toFixed(2)}`} />
@@ -40,14 +67,35 @@ export default async function DashboardPage() {
         <Metric label="Verified Result Records" value={data.metrics.verifiedResults} />
       </div>
 
+      <Card className="mt-8 border-cyan-300/15 bg-cyan-400/[.055]">
+        <div className="grid gap-5 lg:grid-cols-[.8fr_1.2fr_auto] lg:items-center">
+          <div>
+            <h2 className="text-xl font-semibold">Objective evaluation path</h2>
+            <p className="mt-2 text-sm leading-6 text-white/55">Use this checklist to prove the OS works end to end for the current user workspace.</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {readinessItems.map((item) => (
+              <div key={item.label} className={`rounded-lg border px-3 py-2 text-sm ${item.done ? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-100' : 'border-white/10 bg-black/25 text-white/50'}`}>
+                {item.done ? 'Ready: ' : 'Next: '}{item.label}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 lg:flex-col">
+            <Link href="/dashboard/company-builder" className="rounded-lg border border-cyan-300/20 bg-black/20 px-4 py-2 text-sm text-cyan-100">Build</Link>
+            <Link href="/dashboard/workflows" className="rounded-lg border border-emerald-300/20 bg-black/20 px-4 py-2 text-sm text-emerald-100">Run</Link>
+            <a href="/api/export" className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black">Export</a>
+          </div>
+        </div>
+      </Card>
+
       <div className="mt-8">
         <Card>
           <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
             <div>
-              <h2 className="text-xl font-semibold">Text + Live AI Call</h2>
-              <p className="mt-1 text-sm text-white/50">Ask by text or use the talk button. Bedrock generates the answer and Polly speaks it back.</p>
+              <h2 className="text-xl font-semibold">AI Company Builder chat</h2>
+              <p className="mt-1 text-sm text-white/50">Ask by text or use the talk button. Bedrock can answer, ask follow-ups, or create workspace artifacts.</p>
             </div>
-            <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 px-3 py-2 text-sm text-cyan-100">Live operator ready</div>
+            <Link href="/dashboard/company-builder" className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 px-3 py-2 text-sm text-cyan-100">Open full builder</Link>
           </div>
           <LiveVoiceAgent />
         </Card>
@@ -57,7 +105,7 @@ export default async function DashboardPage() {
         <Card>
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Digital Workforce Status</h2>
-            <Link href="/dashboard/digital-ftes" className="text-sm text-cyan-300">Manage FTEs →</Link>
+            <Link href="/dashboard/digital-ftes" className="text-sm text-cyan-300">Manage FTEs</Link>
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {data.agents.slice(0, 8).map((agent) => (
@@ -87,6 +135,11 @@ export default async function DashboardPage() {
                 <p className="mt-1 text-sm text-white/50">{event.description}</p>
               </div>
             ))}
+            {!data.events.length && (
+              <div className="rounded-lg border border-white/10 bg-black/25 p-4 text-sm text-white/45">
+                No runtime events yet. Run a workflow or generate a runtime event from Runtime Tests.
+              </div>
+            )}
           </div>
         </Card>
       </div>
@@ -132,7 +185,7 @@ export default async function DashboardPage() {
         <Card>
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Decision Ledger Preview</h2>
-            <Link href="/dashboard/decision-ledger" className="text-sm text-cyan-300">Open ledger →</Link>
+            <Link href="/dashboard/decision-ledger" className="text-sm text-cyan-300">Open ledger</Link>
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">

@@ -1,23 +1,129 @@
 import 'server-only';
-import { desc, eq } from 'drizzle-orm';
-import { db, boardReports, businessResults, companyBlueprints, decisionLedger, departments, digitalFtes, policies, simulationEvents, sops, workflowRuns, workflowStepRuns, workflows } from '@/db';
+import { pool } from '@/db';
 import { requireWorkspace } from '@/lib/session';
+
+type WorkspaceDataValue = string | number | boolean | Date | null | string[];
+
+type WorkspaceDataRecord = Record<string, WorkspaceDataValue> & {
+  id: string;
+  workspaceId: string;
+  agentId?: string | null;
+  departmentId?: string | null;
+  ownerAgentId?: string | null;
+  leadId?: string | null;
+  workflowId?: string | null;
+  workflowRunId?: string | null;
+  name: string;
+  title: string;
+  companyName: string;
+  targetCustomer: string;
+  valueProposition: string;
+  revenueModel: string;
+  operatingModel: string;
+  objective: string;
+  owner: string;
+  failureHandling: string;
+  auditRequirements: string;
+  summary: string;
+  auditSummary: string;
+  purpose: string;
+  role: string;
+  goal: string;
+  currentTask: string;
+  trigger: string;
+  successMetric: string;
+  failurePath: string;
+  description: string;
+  condition: string;
+  action: string;
+  result: string;
+  proof: string;
+  unit: string;
+  resultSummary: string;
+  evidence: string;
+  contactName: string;
+  email: string;
+  website?: string | null;
+  segment?: string | null;
+  painPoint: string;
+  source: string;
+  notes: string;
+  toEmail: string;
+  subject: string;
+  body: string;
+  approvalReason: string;
+  providerMessageId?: string | null;
+  failureReason?: string | null;
+  stepName: string;
+  toolUsed?: string | null;
+  status: string;
+  decision: string;
+  severity: string;
+  riskLevel: string;
+  autonomyLevel: string;
+  eventType: string;
+  mode: string;
+  policyMatched: string;
+  databaseReference: string;
+  approvedBy?: string | null;
+  enabled: boolean;
+  createdAt: Date | string;
+  budget: string | number;
+  dailyBudget: string | number;
+  costToday: string | number;
+  value: string | number;
+  costUsd: string | number;
+  moneySpent: string | number;
+  successRate: number;
+  durationMs: number;
+  tasksCompleted: number;
+  hoursSaved: number;
+  riskyActionsBlocked: number;
+  stepIndex: number;
+  score: number;
+  coreKpis: string[];
+  launchChecklist: string[];
+  recommendations: string[];
+  kpis: string[];
+  tools: string[];
+  steps: string[];
+  toolsUsed: string[];
+  approvalPoints: string[];
+  requiredTools: string[];
+  approvalRules: string[];
+  outputArtifacts: string[];
+};
+
+function camelKey(key: string) {
+  return key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function mapRow(row: Record<string, unknown>) {
+  return Object.fromEntries(Object.entries(row).map(([key, value]) => [camelKey(key), value])) as WorkspaceDataRecord;
+}
+
+async function workspaceRows(table: string, workspaceId: string, orderBy = 'created_at desc') {
+  const result = await pool.query(`select * from ${table} where workspace_id = $1 order by ${orderBy}`, [workspaceId]);
+  return result.rows.map(mapRow);
+}
 
 export async function getWorkspaceData() {
   const { user, workspace } = await requireWorkspace();
-  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows] = await Promise.all([
-    db.select().from(departments).where(eq(departments.workspaceId, workspace.id)),
-    db.select().from(digitalFtes).where(eq(digitalFtes.workspaceId, workspace.id)),
-    db.select().from(workflows).where(eq(workflows.workspaceId, workspace.id)),
-    db.select().from(policies).where(eq(policies.workspaceId, workspace.id)),
-    db.select().from(decisionLedger).where(eq(decisionLedger.workspaceId, workspace.id)).orderBy(desc(decisionLedger.createdAt)),
-    db.select().from(simulationEvents).where(eq(simulationEvents.workspaceId, workspace.id)).orderBy(desc(simulationEvents.createdAt)),
-    db.select().from(companyBlueprints).where(eq(companyBlueprints.workspaceId, workspace.id)).orderBy(desc(companyBlueprints.createdAt)),
-    db.select().from(sops).where(eq(sops.workspaceId, workspace.id)).orderBy(desc(sops.createdAt)),
-    db.select().from(boardReports).where(eq(boardReports.workspaceId, workspace.id)).orderBy(desc(boardReports.createdAt)),
-    db.select().from(workflowRuns).where(eq(workflowRuns.workspaceId, workspace.id)).orderBy(desc(workflowRuns.createdAt)),
-    db.select().from(workflowStepRuns).where(eq(workflowStepRuns.workspaceId, workspace.id)).orderBy(desc(workflowStepRuns.createdAt)),
-    db.select().from(businessResults).where(eq(businessResults.workspaceId, workspace.id)).orderBy(desc(businessResults.createdAt)),
+  const [deptRows, agentRows, workflowRows, policyRows, decisionRows, eventRows, blueprintRows, sopRows, reportRows, runRows, stepRunRows, resultRows, leadRows, emailRows] = await Promise.all([
+    workspaceRows('departments', workspace.id, 'created_at asc'),
+    workspaceRows('digital_ftes', workspace.id, 'created_at asc'),
+    workspaceRows('workflows', workspace.id, 'created_at asc'),
+    workspaceRows('policies', workspace.id, 'created_at asc'),
+    workspaceRows('decision_ledger', workspace.id),
+    workspaceRows('simulation_events', workspace.id),
+    workspaceRows('company_blueprints', workspace.id),
+    workspaceRows('sops', workspace.id),
+    workspaceRows('board_reports', workspace.id),
+    workspaceRows('workflow_runs', workspace.id),
+    workspaceRows('workflow_step_runs', workspace.id),
+    workspaceRows('business_results', workspace.id),
+    workspaceRows('sales_leads', workspace.id),
+    workspaceRows('outbound_emails', workspace.id),
   ]);
 
   const spendToday = agentRows.reduce((sum, agent) => sum + Number(agent.costToday || 0), 0);
@@ -51,6 +157,8 @@ export async function getWorkspaceData() {
     workflowRuns: runRows,
     workflowStepRuns: stepRunRows,
     businessResults: resultRows,
+    salesLeads: leadRows,
+    outboundEmails: emailRows,
     metrics: {
       digitalFtesActive: agentRows.filter((agent) => !['paused', 'blocked'].includes(agent.status)).length,
       tasksCompletedToday,
@@ -62,6 +170,8 @@ export async function getWorkspaceData() {
       agentRoi: spendToday > 0 ? Math.max(1.2, (tasksCompletedToday * 8) / spendToday) : 1,
       workflowRunsCompleted: runRows.filter((run) => run.status === 'completed').length,
       verifiedResults: resultRows.filter((result) => result.status === 'verified').length,
+      salesLeads: leadRows.length,
+      emailsSent: emailRows.filter((email) => email.status === 'sent').length,
     },
   };
 }
