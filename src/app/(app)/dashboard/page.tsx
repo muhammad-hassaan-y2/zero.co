@@ -2,32 +2,59 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Badge, Card, Metric } from '@/components/status';
 import { DecisionActions } from '@/components/action-buttons';
+import { DashboardFeatureMap, WorkspaceSummaryStrip } from '@/components/dashboard-nav';
 import { getWorkspaceData } from '@/lib/data';
 import { LiveVoiceAgent } from './live/voice-agent';
 
 export default async function DashboardPage() {
   const data = await getWorkspaceData();
   if (!data.agents.length) redirect('/onboarding');
+  const readinessItems = [
+    { label: 'Company OS generated', done: Boolean(data.blueprint && data.agents.length && data.workflows.length) },
+    { label: 'Digital FTEs selected', done: data.agents.length > 0 },
+    { label: 'Policies and SOPs present', done: data.policies.length > 0 && data.sops.length > 0 },
+    { label: 'Workflow runtime tested', done: data.workflowRuns.length > 0 },
+    { label: 'Business evidence produced', done: data.businessResults.length > 0 },
+    { label: 'Operating report ready', done: data.reports.length > 0 },
+  ];
+  const readinessScore = Math.round((readinessItems.filter((item) => item.done).length / readinessItems.length) * 100);
+
   return (
     <div>
       <div className="mb-8 flex flex-col justify-between gap-5 border-b border-white/10 pb-6 xl:flex-row xl:items-end">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">AI-Native Company Command Center</h1>
-          <p className="mt-3 max-w-4xl text-white/60">Monitor your digital workforce, policies, spend, approvals, operating health, and live AI operator from database-backed records.</p>
+          <p className="mt-3 max-w-4xl text-white/60">Build, run, evaluate, govern, and export the company OS from database-backed records. Each section works from the current workspace rather than static demo content.</p>
         </div>
-        <div className="grid min-w-[260px] grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg border border-white/10 bg-black/25 p-3">
-            <p className="text-white/40">Departments</p>
-            <p className="mt-1 text-2xl font-semibold">{data.departments.length}</p>
+        <div className="min-w-[280px] rounded-lg border border-white/10 bg-black/30 p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-white/45">End-to-end readiness</p>
+              <p className="mt-1 text-3xl font-semibold">{readinessScore}%</p>
+            </div>
+            <Link href="/dashboard/workflows" className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">Test</Link>
           </div>
-          <div className="rounded-lg border border-white/10 bg-black/25 p-3">
-            <p className="text-white/40">Workflows</p>
-            <p className="mt-1 text-2xl font-semibold">{data.workflows.length}</p>
+          <div className="mt-4 h-2 rounded-full bg-white/10">
+            <div className="h-2 rounded-full bg-cyan-300" style={{ width: `${readinessScore}%` }} />
           </div>
+          <p className="mt-3 text-xs text-white/45">Run workflows and generate an operating report to complete objective evaluation.</p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <WorkspaceSummaryStrip counts={{
+        departments: data.departments.length,
+        agents: data.agents.length,
+        workflows: data.workflows.length,
+        policies: data.policies.length,
+        sops: data.sops.length,
+        results: data.businessResults.length,
+      }} />
+
+      <div className="mt-6">
+        <DashboardFeatureMap />
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Metric label="Digital FTEs Active" value={data.metrics.digitalFtesActive} />
         <Metric label="Tasks Completed Today" value={data.metrics.tasksCompletedToday} />
         <Metric label="AI Spend Today" value={`$${data.metrics.aiSpendToday.toFixed(2)}`} />
@@ -40,28 +67,26 @@ export default async function DashboardPage() {
         <Metric label="Verified Result Records" value={data.metrics.verifiedResults} />
       </div>
 
-      <Card className="mt-8">
-        <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+      <Card className="mt-8 border-cyan-300/15 bg-cyan-400/[.055]">
+        <div className="grid gap-5 lg:grid-cols-[.8fr_1.2fr_auto] lg:items-center">
           <div>
-            <h2 className="text-xl font-semibold">Test and integrate this OS</h2>
-            <p className="mt-2 max-w-4xl text-sm leading-6 text-white/55">
-              Generate a new automation from your business task, run any generated workflow, inspect proof in Results, and download the complete operating package as JSON for integration planning.
-            </p>
+            <h2 className="text-xl font-semibold">Objective evaluation path</h2>
+            <p className="mt-2 text-sm leading-6 text-white/55">Use this checklist to prove the OS works end to end for the current user workspace.</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/dashboard/company-builder" className="rounded-xl border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-400/15">Create automation</Link>
-            <Link href="/dashboard/workflows" className="rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-100 hover:bg-emerald-400/15">Run workflow</Link>
-            <a href="/api/export" className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black hover:bg-white/90">Download package</a>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {readinessItems.map((item) => (
+              <div key={item.label} className={`rounded-lg border px-3 py-2 text-sm ${item.done ? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-100' : 'border-white/10 bg-black/25 text-white/50'}`}>
+                {item.done ? 'Ready: ' : 'Next: '}{item.label}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 lg:flex-col">
+            <Link href="/dashboard/company-builder" className="rounded-lg border border-cyan-300/20 bg-black/20 px-4 py-2 text-sm text-cyan-100">Build</Link>
+            <Link href="/dashboard/workflows" className="rounded-lg border border-emerald-300/20 bg-black/20 px-4 py-2 text-sm text-emerald-100">Run</Link>
+            <a href="/api/export" className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black">Export</a>
           </div>
         </div>
       </Card>
-
-      <div className="mt-8 grid gap-4 lg:grid-cols-4">
-        <StepCard title="1. Describe" text="Use Live Builder Call or Company Builder to describe the agent, workflow, tools, approvals, and target result." href="/dashboard/live" cta="Open live builder" />
-        <StepCard title="2. Build" text="Bedrock creates agents, workflows, policies, SOPs, events, and ledger records from your request." href="/dashboard/company-builder" cta="Create artifacts" />
-        <StepCard title="3. Run" text="Run generated workflows to create runtime evidence, step logs, business results, and approval records." href="/dashboard/workflows" cta="Run workflows" />
-        <StepCard title="4. Prove" text="Review results, generate operating reports from evidence, and export the OS package." href="/dashboard/results" cta="Inspect results" />
-      </div>
 
       <div className="mt-8">
         <Card>
@@ -181,15 +206,5 @@ export default async function DashboardPage() {
         <p className="mt-3 text-white/60">Next.js API routes connect auth, workspace data, Bedrock generation, Polly voice, Transcribe jobs, automation creation, workflow runtime execution, step evidence, business result records, and the database-backed decision ledger.</p>
       </Card>
     </div>
-  );
-}
-
-function StepCard({ title, text, href, cta }: { title: string; text: string; href: string; cta: string }) {
-  return (
-    <Link href={href} className="rounded-lg border border-white/10 bg-white/[.04] p-5 transition hover:border-cyan-300/25 hover:bg-white/[.07]">
-      <h2 className="font-semibold">{title}</h2>
-      <p className="mt-3 min-h-20 text-sm leading-6 text-white/55">{text}</p>
-      <p className="mt-4 text-sm text-cyan-300">{cta}</p>
-    </Link>
   );
 }

@@ -36,7 +36,21 @@ function configured() {
 }
 
 function cleanJson(text: string) {
-  return text.replace(/```json|```/g, '').trim();
+  const stripped = text.replace(/```json|```/g, '').trim();
+  const firstObject = stripped.indexOf('{');
+  const lastObject = stripped.lastIndexOf('}');
+  const firstArray = stripped.indexOf('[');
+  const lastArray = stripped.lastIndexOf(']');
+
+  if (firstObject !== -1 && lastObject > firstObject) {
+    return stripped.slice(firstObject, lastObject + 1);
+  }
+
+  if (firstArray !== -1 && lastArray > firstArray) {
+    return stripped.slice(firstArray, lastArray + 1);
+  }
+
+  return stripped;
 }
 
 function asString(value: unknown, fallback: string, max = 1600) {
@@ -74,7 +88,7 @@ function requireText(value: unknown, label: string) {
   return value.trim();
 }
 
-async function runBedrockJson(prompt: string, maxTokens = 5500) {
+async function converseText(prompt: string, maxTokens: number, temperature = 0.25) {
   if (!configured()) {
     throw new Error('Amazon Bedrock is required. Set AWS_REGION and AWS_BEDROCK_MODEL_ID.');
   }
@@ -83,12 +97,42 @@ async function runBedrockJson(prompt: string, maxTokens = 5500) {
   const response = await client.send(new ConverseCommand({
     modelId: process.env.AWS_BEDROCK_MODEL_ID!,
     messages: [{ role: 'user', content: [{ text: prompt }] }],
-    inferenceConfig: { temperature: 0.25, maxTokens },
+    inferenceConfig: { temperature, maxTokens },
   }));
 
   const text = response.output?.message?.content?.find((part) => 'text' in part)?.text;
   if (!text) throw new Error('Amazon Bedrock returned an empty response.');
-  return JSON.parse(cleanJson(text));
+  return text.trim();
+}
+
+function parseBedrockJson(text: string) {
+  try {
+    return JSON.parse(cleanJson(text));
+  } catch (error) {
+    throw new Error(`Amazon Bedrock returned invalid JSON: ${error instanceof Error ? error.message : 'parse failed'}`);
+  }
+}
+
+async function runBedrockJson(prompt: string, maxTokens = 5500) {
+  const text = await converseText(prompt, maxTokens);
+  try {
+    return parseBedrockJson(text);
+  } catch (firstError) {
+    const repairPrompt = `Repair the following model output into strict valid JSON only. Do not add markdown, comments, explanations, or new fields. Preserve all useful fields and arrays.
+
+Original instruction:
+${prompt.slice(0, 6000)}
+
+Invalid output:
+${text.slice(0, 12000)}`;
+
+    const repaired = await converseText(repairPrompt, Math.min(maxTokens, 5500), 0);
+    try {
+      return parseBedrockJson(repaired);
+    } catch {
+      throw firstError;
+    }
+  }
 }
 
 export async function enhanceBlueprintWithBedrock(profile: Profile, current: BlueprintInsert): Promise<BlueprintInsert> {
