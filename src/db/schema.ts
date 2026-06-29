@@ -86,6 +86,26 @@ export const workspaces = pgTable('workspaces', {
   slugIdx: uniqueIndex('workspaces_slug_idx').on(t.slug),
 }));
 
+export const integrationAccounts = pgTable('integration_accounts', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(),
+  providerAccountId: text('provider_account_id').notNull(),
+  email: text('email'),
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  scope: text('scope').notNull().default(''),
+  status: text('status').notNull().default('connected'),
+  lastSyncAt: timestamp('last_sync_at', { withTimezone: true }),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt,
+  updatedAt,
+}, (t) => ({
+  providerAccountIdx: uniqueIndex('integration_accounts_provider_account_idx').on(t.workspaceId, t.provider, t.providerAccountId),
+}));
+
 export const onboardingProfiles = pgTable('onboarding_profiles', {
   id: text('id').primaryKey(),
   workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
@@ -432,6 +452,7 @@ export const workspaceRelations = relations(workspaces, ({ one, many }) => ({
   workflowRuns: many(workflowRuns),
   businessResults: many(businessResults),
   salesLeads: many(salesLeads),
+  integrationAccounts: many(integrationAccounts),
   customerQueries: many(customerQueries),
   customers: many(customers),
   salesDeals: many(salesDeals),

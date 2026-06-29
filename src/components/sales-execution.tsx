@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, Building2, CheckCircle2, ClipboardList, Download, Search, Send, Sparkles, UserPlus } from 'lucide-react';
+import { Bot, Building2, CheckCircle2, ClipboardList, Download, Mail, RefreshCw, Search, Send, Sparkles, UserPlus } from 'lucide-react';
 
 type Agent = { id: string; name: string };
 type Lead = { id: string; companyName: string; contactName: string; email: string; score: number; status: string };
@@ -147,6 +147,75 @@ export function CrmExportActions() {
         ))}
       </div>
       <a href="/api/crm/export" className="mt-3 inline-block text-sm text-cyan-100">Download all as JSON</a>
+    </div>
+  );
+}
+
+export function GoogleIntegrationPanel() {
+  const router = useRouter();
+  const [loading, setLoading] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ connected: boolean; email?: string | null; lastSyncAt?: string | null } | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadStatus() {
+    setLoading('status');
+    setError(null);
+    const response = await fetch('/api/integrations/google/status');
+    setLoading(null);
+    if (!response.ok) {
+      setError(await readError(response, 'Google status failed.'));
+      return;
+    }
+    setStatus(await response.json());
+  }
+
+  async function sync() {
+    setLoading('sync');
+    setError(null);
+    setMessage(null);
+    const response = await fetch('/api/integrations/google/sync', { method: 'POST' });
+    setLoading(null);
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      setError(payload?.error || 'Gmail sync failed.');
+      return;
+    }
+    setMessage(`Synced Gmail. Created ${payload?.created?.length || 0} customer queries.`);
+    router.refresh();
+    await loadStatus();
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/integrations/google/status')
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (!cancelled && payload) setStatus(payload);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[.04] p-5">
+      <h2 className="flex items-center gap-2 text-xl font-semibold"><Mail className="h-5 w-5" /> Gmail connector</h2>
+      <p className="mt-2 text-sm text-white/55">{status?.connected ? `Connected: ${status.email}` : 'Connect Gmail to read inbox messages and sync them into customer queries.'}</p>
+      {status?.lastSyncAt && <p className="mt-1 text-xs text-white/40">Last sync: {new Date(status.lastSyncAt).toLocaleString()}</p>}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <a href="/api/integrations/google/connect" className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-black">
+          <Mail className="h-4 w-4" />
+          {status?.connected ? 'Reconnect Gmail' : 'Connect Gmail'}
+        </a>
+        <button onClick={sync} disabled={!status?.connected || loading !== null} className="inline-flex items-center gap-2 rounded-lg border border-cyan-300/20 bg-cyan-400/10 px-3 py-2 text-sm text-cyan-100 disabled:opacity-50">
+          <RefreshCw className="h-4 w-4" />
+          {loading === 'sync' ? 'Syncing...' : 'Sync inbox'}
+        </button>
+      </div>
+      {message && <p className="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">{message}</p>}
+      {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
     </div>
   );
 }

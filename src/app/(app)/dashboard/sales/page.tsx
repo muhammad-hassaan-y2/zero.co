@@ -1,4 +1,4 @@
-import { ActivityActions, AddAccountForm, AddActivityForm, AddContactForm, AddCustomerQueryForm, AddLeadForm, CloseLeadAction, CrmAssistantPanel, CrmAutopilotPanel, CrmExportActions, CrmRealtimeRefresh, CustomerReplyActions, LeadDiscoveryForm, LeadStageControl, SalesEmailActions } from '@/components/sales-execution';
+import { ActivityActions, AddAccountForm, AddActivityForm, AddContactForm, AddCustomerQueryForm, AddLeadForm, CloseLeadAction, CrmAssistantPanel, CrmAutopilotPanel, CrmExportActions, CrmRealtimeRefresh, CustomerReplyActions, GoogleIntegrationPanel, LeadDiscoveryForm, LeadStageControl, SalesEmailActions } from '@/components/sales-execution';
 import { Badge, Card, Metric } from '@/components/status';
 import { getWorkspaceData } from '@/lib/data';
 
@@ -23,9 +23,13 @@ export default async function SalesExecutionPage() {
         <Metric label="Agent memories" value={data.agentMemories.length} />
       </div>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-3">
+      <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <CrmAssistantPanel />
         <CrmAutopilotPanel />
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <GoogleIntegrationPanel />
         <CrmExportActions />
       </div>
 

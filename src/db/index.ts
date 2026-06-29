@@ -78,6 +78,25 @@ CREATE TABLE workspaces (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE integration_accounts (
+  id text PRIMARY KEY,
+  workspace_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  provider text NOT NULL,
+  provider_account_id text NOT NULL,
+  email text,
+  access_token text NOT NULL,
+  refresh_token text,
+  expires_at timestamptz,
+  scope text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'connected',
+  last_sync_at timestamptz,
+  metadata jsonb NOT NULL DEFAULT '{}',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(workspace_id, provider, provider_account_id)
+);
 CREATE UNIQUE INDEX workspaces_slug_idx ON workspaces(slug);
 
 CREATE TABLE onboarding_profiles (
