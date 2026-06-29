@@ -65,8 +65,14 @@ export function CrmAssistantPanel() {
   return (
     <form onSubmit={submit} className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-5">
       <h2 className="flex items-center gap-2 text-xl font-semibold"><Bot className="h-5 w-5" /> AI CRM operator</h2>
+      <div className="mt-4 grid gap-2 text-xs text-cyan-50/75 md:grid-cols-2">
+        <span className="rounded-lg border border-cyan-300/15 bg-black/20 px-3 py-2">Create, update, or delete leads/accounts/contacts</span>
+        <span className="rounded-lg border border-cyan-300/15 bg-black/20 px-3 py-2">Move pipeline stages and complete tasks</span>
+        <span className="rounded-lg border border-cyan-300/15 bg-black/20 px-3 py-2">Draft sales emails from memory</span>
+        <span className="rounded-lg border border-cyan-300/15 bg-black/20 px-3 py-2">Draft customer query replies</span>
+      </div>
       <div className="mt-4 grid gap-3">
-        <textarea name="message" required placeholder="Example: create a lead for Acme, contact Sara at sara@acme.com, pain is slow support. Or: move Acme to negotiating. Or: draft sales email for Acme." className="min-h-24 rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+        <textarea name="message" required placeholder="Examples: update Acme lead email to sara@acme.com. Mark follow-up with Acme done. Draft customer reply for ali@example.com. Delete contact old@example.com because duplicate." className="min-h-28 rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
       </div>
       {reply && <p className="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">{reply}</p>}
       {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}

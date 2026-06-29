@@ -1370,13 +1370,19 @@ Allowed actions:
 - create_account: name, website, industry, status, annualRevenue, notes
 - create_contact: name, email, phone, title, lifecycleStage, accountName
 - create_activity: type task|note|call|meeting|email, title, body, status open|done|blocked, leadCompany, contactEmail
+- update_lead: leadCompany, contactName, email, website, segment, painPoint, notes
+- update_account: accountName, website, industry, status, annualRevenue, notes
+- update_contact: contactEmail, name, phone, title, lifecycleStage, accountName
 - update_lead_status: leadCompany, status new|qualified|contacted|replied|negotiating|closed_lost|disqualified, reason
+- complete_activity: activityTitle, status done|blocked|open, note
 - draft_sales_email: leadCompany
+- draft_customer_reply: customerEmail or subject
+- delete_record: recordType lead|account|contact|activity, identifier, reason
 - answer: reply only, no mutation
 
 Return ONLY valid JSON:
 {
-  "action": "create_lead|create_account|create_contact|create_activity|update_lead_status|draft_sales_email|answer",
+  "action": "create_lead|create_account|create_contact|create_activity|update_lead|update_account|update_contact|update_lead_status|complete_activity|draft_sales_email|draft_customer_reply|delete_record|answer",
   "reply": "",
   "confidence": 0.0,
   "data": {}
@@ -1393,7 +1399,7 @@ Open activities: ${JSON.stringify(input.activities.filter((activity) => activity
 Relevant memory: ${JSON.stringify(input.memories.slice(0, 8))}`;
 
   const parsed = await runBedrockJson(prompt, 1600);
-  const actions = ['create_lead', 'create_account', 'create_contact', 'create_activity', 'update_lead_status', 'draft_sales_email', 'answer'] as const;
+  const actions = ['create_lead', 'create_account', 'create_contact', 'create_activity', 'update_lead', 'update_account', 'update_contact', 'update_lead_status', 'complete_activity', 'draft_sales_email', 'draft_customer_reply', 'delete_record', 'answer'] as const;
   return {
     action: enumValue(parsed.action, actions, 'answer'),
     reply: asString(parsed.reply, 'I need one more detail before I can safely update the CRM.', 700),
