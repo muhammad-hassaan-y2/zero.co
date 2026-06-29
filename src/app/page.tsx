@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Database, Orbit, ShieldCheck, Workflow } from 'lucide-react';
 
 const orbitCards = ['Digital FTEs', 'Workflows', 'Policies', 'Budgets', 'Memory', 'Ledger'];
-const workers = ['CEO Operator Agent', 'Sales Agent', 'Support Agent', 'Refund Agent', 'QA Agent', 'Research Agent', 'DevOps Agent'];
+const workers = ['Revenue FTE', 'Support FTE', 'Refund FTE', 'QA FTE', 'Finance FTE', 'Research FTE', 'DevOps FTE'];
 
 export default function LandingPage() {
   return (
@@ -20,17 +20,17 @@ export default function LandingPage() {
       <section className="relative z-10 mx-auto grid min-h-[82vh] max-w-7xl items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_.9fr]">
         <div>
           <p className="mb-5 inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm text-cyan-100">
-            H0 track 2 · Monetizable B2B AI-native company builder
+            Autonomous CRM · Digital FTEs · Company OS
           </p>
           <h1 className="max-w-4xl text-6xl font-semibold leading-[0.92] tracking-tight md:text-8xl">
-            Build your <span className="text-gradient">AI-native company</span> from zero.
+            Stop managing software. <span className="text-gradient">Direct the OS</span> that runs it.
           </h1>
           <p className="mt-7 max-w-2xl text-lg leading-8 text-white/62 md:text-xl">
-            ZeroCo transforms your real business operation into digital FTEs, workflows, SOPs, approval policies, budgets, simulations, and a database-backed operating ledger.
+            ZeroCo turns your CRM into an AI-native operating layer where Digital FTEs organize leads, draft outreach, sync customer queries, prepare follow-ups, and escalate risky work with memory, policies, and an audit trail.
           </p>
           <div className="mt-9 flex flex-wrap gap-4">
-            <Link href="/sign-up" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-medium text-black hover:bg-white/90">Build from zero <ArrowRight size={18} /></Link>
-            <a href="#demo" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 font-medium text-white hover:bg-white/10">Watch demo</a>
+            <Link href="/sign-up" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-medium text-black hover:bg-white/90">Launch your company OS <ArrowRight size={18} /></Link>
+            <a href="#demo" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 font-medium text-white hover:bg-white/10">See the agent layer</a>
           </div>
         </div>
         <div className="relative mx-auto h-[520px] w-full max-w-[520px] animate-float">
@@ -48,49 +48,49 @@ export default function LandingPage() {
       <section id="product" className="relative z-10 mx-auto max-w-7xl px-6 py-24">
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-[2rem] border border-white/10 bg-white/[.05] p-8">
-            <h2 className="text-4xl font-semibold tracking-tight">Not an idea generator. A company builder.</h2>
-            <p className="mt-5 text-white/60">Bring your business. ZeroCo builds the AI-native operating system around it: roles, workflows, policies, cost controls, approvals, simulations, and the decision memory.</p>
+            <h2 className="text-4xl font-semibold tracking-tight">Not a passive CRM. An operating system.</h2>
+            <p className="mt-5 text-white/60">Bring your business context. ZeroCo generates the digital workforce around it: agents, workflows, policies, memory, approvals, sales motions, and the decision ledger that keeps every action accountable.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Compare title="Old way" items={['scattered SOPs', 'manual hiring', 'unclear workflows', 'no cost control', 'no decision memory']} />
-            <Compare title="ZeroCo way" items={['digital FTE org chart', 'structured workflows', 'approval policies', 'budgets + autonomy', 'database-backed ledger']} />
+            <Compare title="Old CRM" items={['records after the work', 'manual follow-ups', 'scattered SOPs', 'no agent memory', 'weak audit trail']} />
+            <Compare title="ZeroCo OS" items={['agents before the work', 'drafts + next actions', 'policy-gated workflows', 'workspace memory', 'database-backed ledger']} />
           </div>
         </div>
       </section>
 
       <section id="company-os" className="relative z-10 mx-auto max-w-7xl px-6 py-24">
         <div className="mb-10 max-w-3xl">
-          <h2 className="text-5xl font-semibold tracking-tight">From operation to operating system.</h2>
-          <p className="mt-4 text-white/60">ZeroCo converts your current company/workflow into a living AI-native company OS.</p>
+          <h2 className="text-5xl font-semibold tracking-tight">From customer chaos to governed autonomy.</h2>
+          <p className="mt-4 text-white/60">Describe the operation once. ZeroCo turns it into agents, departments, workflows, approval rules, and CRM actions your team can inspect and run.</p>
         </div>
         <div className="rounded-[2rem] border border-white/10 bg-black/35 p-6 shadow-2xl backdrop-blur-xl">
-          <p className="rounded-2xl border border-white/10 bg-white/[.04] p-5 text-white/75">&quot;I run a customer support and refund operations agency for ecommerce stores.&quot;</p>
+          <p className="rounded-2xl border border-white/10 bg-white/[.04] p-5 text-white/75">&quot;I run sales, support, and refund operations for ecommerce brands. I need agents that can manage leads, customer queries, follow-ups, and approval-heavy decisions.&quot;</p>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {[['Departments', 'Support, Refund Ops, QA, Finance'], ['Digital FTEs', 'Support Agent, Refund Agent, QA Agent'], ['Policies', 'Refund limits, spend throttles, data deletion blocks'], ['Workflows', 'Ticket handling, refund processing, QA review'], ['Budgets', 'Daily FTE limits and cost circuit breakers'], ['Ledger', 'Every decision stored for audit and replay']].map(([title, text]) => <div key={title} className="rounded-2xl border border-white/10 bg-white/[.045] p-5"><h3 className="font-medium">{title}</h3><p className="mt-2 text-sm text-white/55">{text}</p></div>)}
+            {[['CRM Layer', 'Leads, accounts, contacts, queries, deals'], ['Digital FTEs', 'Sales, support, refund, QA, finance, DevOps'], ['Policies', 'Approval gates, blocked actions, spend controls'], ['Workflows', 'Outreach, inbox triage, replies, follow-ups'], ['Memory', 'Customer context, agent notes, prior decisions'], ['Ledger', 'Every decision stored for audit and replay']].map(([title, text]) => <div key={title} className="rounded-2xl border border-white/10 bg-white/[.045] p-5"><h3 className="font-medium">{title}</h3><p className="mt-2 text-sm text-white/55">{text}</p></div>)}
           </div>
         </div>
       </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-24">
-        <h2 className="text-5xl font-semibold tracking-tight">Digital FTE workforce.</h2>
+        <h2 className="text-5xl font-semibold tracking-tight">Digital FTEs that work inside your guardrails.</h2>
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {workers.map((worker, index) => <div key={worker} className="rounded-3xl border border-white/10 bg-white/[.05] p-5"><p className="text-xs text-cyan-200">Level {index + 1}</p><h3 className="mt-3 font-medium">{worker}</h3><p className="mt-3 text-sm text-white/50">Budgeted, policy-gated, auditable digital worker with bounded autonomy.</p></div>)}
+          {workers.map((worker, index) => <div key={worker} className="rounded-3xl border border-white/10 bg-white/[.05] p-5"><p className="text-xs text-cyan-200">Agent {index + 1}</p><h3 className="mt-3 font-medium">{worker}</h3><p className="mt-3 text-sm text-white/50">A bounded AI worker with goals, tools, memory, approval rules, and audit evidence.</p></div>)}
         </div>
       </section>
 
       <section id="demo" className="relative z-10 mx-auto max-w-7xl px-6 py-24">
         <div className="grid gap-5 lg:grid-cols-3">
-          <Feature icon={<ShieldCheck />} title="Governed autonomy" text="Approval gates, blocked actions, human review, and cost circuit breakers built into every FTE." />
-          <Feature icon={<Database />} title="Database-backed ledger" text="Every policy match, approval, rejection, and simulation event is persisted in Aurora PostgreSQL." />
-          <Feature icon={<Workflow />} title="Dynamic company OS" text="Onboarding generates real departments, workflows, SOPs, policies, agents, and board reports." />
+          <Feature icon={<ShieldCheck />} title="Autonomy with brakes" text="Low-risk work moves quickly. High-risk work goes to approval. Blocked actions stop before damage." />
+          <Feature icon={<Database />} title="Memory, not magic" text="CRM actions, customer queries, agent notes, workflow evidence, and decisions are persisted by workspace." />
+          <Feature icon={<Workflow />} title="Generated for your business" text="Bedrock creates company-specific agents, workflows, SOPs, policies, sales motions, and software specs." />
         </div>
       </section>
 
       <section className="relative z-10 mx-auto max-w-5xl px-6 py-28 text-center">
-        <h2 className="text-5xl font-semibold tracking-tight">Build the operating system for your AI-native company.</h2>
-        <p className="mx-auto mt-5 max-w-2xl text-white/60">Start with your real business. ZeroCo turns it into a governed AI workforce.</p>
+        <h2 className="text-5xl font-semibold tracking-tight">Meet the CRM that starts doing the work.</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-white/60">Start with your real business. ZeroCo turns it into a governed AI workforce that can manage CRM work, draft actions, sync context, and show its reasoning.</p>
         <div className="mt-9 flex justify-center gap-4">
-          <Link href="/sign-up" className="rounded-full bg-white px-6 py-3 font-medium text-black">Launch ZeroCo</Link>
+          <Link href="/sign-up" className="rounded-full bg-white px-6 py-3 font-medium text-black">Build your OS</Link>
           <Link href="/dashboard" className="rounded-full border border-white/10 bg-white/5 px-6 py-3 font-medium text-white">View app</Link>
         </div>
       </section>
