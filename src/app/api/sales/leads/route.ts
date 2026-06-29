@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { db, salesLeads } from '@/db';
@@ -23,6 +24,11 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid lead data', details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const [existingLead] = await db.select().from(salesLeads).where(and(eq(salesLeads.workspaceId, ctx.workspace.id), eq(salesLeads.email, parsed.data.email))).limit(1);
+  if (existingLead) {
+    return NextResponse.json({ error: `Lead already exists for ${parsed.data.email}`, lead: existingLead }, { status: 409 });
   }
 
   const [lead] = await db.insert(salesLeads).values({

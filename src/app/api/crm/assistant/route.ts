@@ -304,27 +304,38 @@ export async function POST(request: Request) {
     if (recordType === 'lead') {
       const lead = await findLead(ctx.workspace.id, identifier);
       if (!lead) return NextResponse.json({ action: plan.action, reply: 'Lead not found.' }, { status: 404 });
-      await db.delete(salesLeads).where(and(eq(salesLeads.id, lead.id), eq(salesLeads.workspaceId, ctx.workspace.id)));
-      result = { deleted: 'lead', id: lead.id };
-      reply = `Deleted lead ${lead.companyName}.`;
+      const [archivedLead] = await db.update(salesLeads).set({
+        status: 'disqualified',
+        notes: [lead.notes, `Assistant archived instead of hard-deleting. Reason: ${reason}`].filter(Boolean).join('\n'),
+      }).where(and(eq(salesLeads.id, lead.id), eq(salesLeads.workspaceId, ctx.workspace.id))).returning();
+      result = { archived: 'lead', record: archivedLead };
+      reply = `Archived lead ${lead.companyName} as disqualified.`;
     } else if (recordType === 'account') {
       const account = await findAccount(ctx.workspace.id, identifier);
       if (!account) return NextResponse.json({ action: plan.action, reply: 'Account not found.' }, { status: 404 });
-      await db.delete(crmAccounts).where(and(eq(crmAccounts.id, account.id), eq(crmAccounts.workspaceId, ctx.workspace.id)));
-      result = { deleted: 'account', id: account.id };
-      reply = `Deleted account ${account.name}.`;
+      const [archivedAccount] = await db.update(crmAccounts).set({
+        status: 'archived',
+        notes: [account.notes, `Assistant archived instead of hard-deleting. Reason: ${reason}`].filter(Boolean).join('\n'),
+      }).where(and(eq(crmAccounts.id, account.id), eq(crmAccounts.workspaceId, ctx.workspace.id))).returning();
+      result = { archived: 'account', record: archivedAccount };
+      reply = `Archived account ${account.name}.`;
     } else if (recordType === 'contact') {
       const contact = await findContact(ctx.workspace.id, identifier);
       if (!contact) return NextResponse.json({ action: plan.action, reply: 'Contact not found.' }, { status: 404 });
-      await db.delete(crmContacts).where(and(eq(crmContacts.id, contact.id), eq(crmContacts.workspaceId, ctx.workspace.id)));
-      result = { deleted: 'contact', id: contact.id };
-      reply = `Deleted contact ${contact.name}.`;
+      const [archivedContact] = await db.update(crmContacts).set({
+        lifecycleStage: 'archived',
+      }).where(and(eq(crmContacts.id, contact.id), eq(crmContacts.workspaceId, ctx.workspace.id))).returning();
+      result = { archived: 'contact', record: archivedContact };
+      reply = `Archived contact ${contact.name}.`;
     } else if (recordType === 'activity') {
       const activity = await findActivity(ctx.workspace.id, identifier);
       if (!activity) return NextResponse.json({ action: plan.action, reply: 'Activity not found.' }, { status: 404 });
-      await db.delete(crmActivities).where(and(eq(crmActivities.id, activity.id), eq(crmActivities.workspaceId, ctx.workspace.id)));
-      result = { deleted: 'activity', id: activity.id };
-      reply = `Deleted activity ${activity.title}.`;
+      const [archivedActivity] = await db.update(crmActivities).set({
+        status: 'blocked',
+        body: [activity.body, `Assistant archived instead of hard-deleting. Reason: ${reason}`].filter(Boolean).join('\n'),
+      }).where(and(eq(crmActivities.id, activity.id), eq(crmActivities.workspaceId, ctx.workspace.id))).returning();
+      result = { archived: 'activity', record: archivedActivity };
+      reply = `Archived activity ${activity.title}.`;
     } else {
       return NextResponse.json({ action: plan.action, reply: 'Supported delete types are lead, account, contact, and activity.' }, { status: 400 });
     }
@@ -333,7 +344,7 @@ export async function POST(request: Request) {
       agentId: salesAgent?.id || null,
       sourceType: 'crm_delete',
       sourceId: null,
-      content: `Deleted ${recordType} ${identifier}. Reason: ${reason}`,
+      content: `Archived ${recordType} ${identifier}. Reason: ${reason}`,
       metadata: { recordType, identifier },
     });
   }

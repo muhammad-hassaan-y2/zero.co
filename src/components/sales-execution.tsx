@@ -84,6 +84,58 @@ export function CrmAssistantPanel() {
   );
 }
 
+export function CrmAutopilotPanel() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [actions, setActions] = useState<Array<{ title: string; result: string }>>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  async function runAutopilot() {
+    setLoading(true);
+    setSummary(null);
+    setActions([]);
+    setError(null);
+    const response = await fetch('/api/crm/autopilot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ maxActions: 8 }),
+    });
+    setLoading(false);
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      setError(payload?.error || 'CRM autopilot failed.');
+      return;
+    }
+    setSummary(payload?.summary || 'Autopilot finished.');
+    setActions(payload?.actions || []);
+    router.refresh();
+  }
+
+  return (
+    <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-5">
+      <h2 className="flex items-center gap-2 text-xl font-semibold"><Sparkles className="h-5 w-5" /> CRM autopilot</h2>
+      <p className="mt-2 text-sm text-emerald-50/70">Runs bounded autonomous CRM work: dedupe leads, draft missing outreach, create follow-up tasks, and draft customer replies.</p>
+      <button onClick={runAutopilot} disabled={loading} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-60">
+        <Bot className="h-4 w-4" />
+        {loading ? 'Running...' : 'Run end-to-end autopilot'}
+      </button>
+      {summary && <p className="mt-4 rounded-lg border border-emerald-300/20 bg-black/20 px-3 py-2 text-sm text-emerald-100">{summary}</p>}
+      {actions.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {actions.map((action, index) => (
+            <div key={`${action.title}-${index}`} className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm">
+              <p className="font-medium text-white">{action.title}</p>
+              <p className="mt-1 text-white/55">{action.result}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {error && <p className="mt-4 rounded-lg border border-red-300/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+    </div>
+  );
+}
+
 export function CrmExportActions() {
   const sections = ['leads', 'accounts', 'contacts', 'customers', 'deals', 'activities'];
   return (
